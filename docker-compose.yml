@@ -1,0 +1,56 @@
+services:
+  frontend:
+    build: ./nextApp
+    container_name: frontend
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    networks:
+      - transnet
+    depends_on:
+      database:
+        condition: service_healthy
+    restart: on-failure
+
+  caddy:
+    build: ./caddy
+    container_name: caddy
+    ports:
+      - "8080:80"
+      - "8443:443"
+    depends_on:
+      - frontend
+    networks:
+      - transnet
+
+  database:
+    image: postgres:16
+    container_name: database
+    volumes:
+      - db-volume:/var/lib/postgresql/data
+    # ports:
+    #   - "5432:5432"
+    networks:
+      - transnet
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db-volume:
+    driver: local
+
+  frontend-data:
+    driver: local
+
+networks:
+  transnet:
+    driver: bridge
