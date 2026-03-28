@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  gateway-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create env file
+        run: |
+          cat > .env <<EOF
+          POSTGRES_USER=user
+          POSTGRES_PASSWORD=pass
+          POSTGRES_DB=transcendence
+          DATABASE_URL=postgres://user:pass@database:5432/transcendence
+          ADMIN_EMAIL=admin@admin.com
+          ADMIN_PASSWORD=adminpass
+          EOF
+
+      - name: Build and start stack
+        run: docker compose up --build -d
+
+      - name: Wait for services
+        run: sleep 15
+
+      - name: Check HTTP redirect
+        run: curl -I http://localhost:8080
+
+      - name: Check HTTPS gateway
+        run: curl -k --fail https://localhost:8443
+
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose logs
