@@ -1,19 +1,21 @@
-localhost:80 {
-    redir https://{host}:8443{uri} permanent
+http://localhost:80 {
+	redir https://localhost:8443{uri} permanent
 }
 
-localhost:443 {
-    tls internal
-    log
+https://localhost:443 {
+	tls internal
+	log
 
-    handle {
-        reverse_proxy frontend:3000
-    }
+	handle /health {
+		respond "ok" 200
+	}
 
-    # Static fallback only for root /
-    handle / {
-        root * /srv
-        file_server
-        try_files {path} /index.html
-    }
+	@api path /api/*
+	handle @api {
+		reverse_proxy frontend:3000
+	}
+
+	handle {
+		reverse_proxy frontend:3000
+	}
 }

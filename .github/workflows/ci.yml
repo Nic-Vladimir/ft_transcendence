@@ -30,11 +30,18 @@ jobs:
         run: sleep 15
 
       - name: Check HTTP redirect
-        run: curl -I http://localhost:8080
+        run: curl -I --fail http://localhost:8080
 
-      - name: Check HTTPS gateway
-        run: curl -k --fail https://localhost:8443
+      - name: Check HTTPS gateway health
+        run: curl -k --fail https://localhost:8443/health
+
+      - name: Optional app check (non-blocking)
+        run: curl -k -I https://localhost:8443 || true
 
       - name: Show logs on failure
         if: failure()
-        run: docker compose logs
+        run: |
+          docker compose ps
+          docker compose logs caddy
+          docker compose logs frontend
+          docker compose logs database
