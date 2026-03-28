@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "./prisma";
+import { prisma } from "@/lib/prisma";
 import type { Users } from "@prisma/client";
 
 type AuthSuccess = {

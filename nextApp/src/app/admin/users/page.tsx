@@ -10,7 +10,7 @@ import '@/styles/admin.css';
 import AdminLayout from '@/components/admin/AdminLayout';
 import UsersTable from '@/components/admin/UsersTable';
 import UserModals from '@/components/admin/UserModals';
-import { useUsers } from '@/hooks/useUsers';
+import { useUsers } from '@/modules/user/client';
 import { useState } from 'react';
 
 // ====================

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from "@/modules/auth/client";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '@/styles/admin.css';
 

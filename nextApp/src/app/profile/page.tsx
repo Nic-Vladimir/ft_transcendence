@@ -2,7 +2,7 @@
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useState, useEffect } from 'react';
-import { useProfile } from '@/hooks/useProfile';
+import { useProfile } from '@/modules/user/client';
 import '@/styles/admin.css';
 
 export default function ProfilePage() {
