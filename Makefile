@@ -10,13 +10,9 @@ start: build
 
 dev:
 	@printf "${BOLD}${CYAN}${ROCKET} Starting ${name} (development)...${RESET}\n"
-	@$(COMPOSE) up --build
+	@$(COMPOSE) up --build -d
 
-dev-re: dev-down dev
-
-dev-down:
-	@printf "${BOLD}${RED}${DOWN} Stopping dev containers...${RESET}\n"
-	@$(COMPOSE) down
+dev-re: down dev
 
 build:
 	@printf "${BOLD}${YELLOW}${GEAR} Building ${name}...${RESET}\n"
@@ -40,11 +36,10 @@ ps:
 
 clean:
 	@printf "${BOLD}${RED}${CLEAN} Cleaning containers and images...${RESET}\n"
-	@$(COMPOSE) down --rmi all --remove-orphans
-
+	@$(COMPOSE) down --rmi local
 fclean:
 	@printf "${BOLD}${RED}${CLEAN} Removing everything including volumes...${RESET}\n"
-	@$(COMPOSE) down -v --rmi all --remove-orphans
+	@$(COMPOSE) down -v --rmi local
 
 .PHONY: all start dev dev-re dev-down build up down re logs ps clean fclean
 

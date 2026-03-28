@@ -4,17 +4,21 @@ A social trivia web app built with **Next.js**, **PostgreSQL**, and **Prisma ORM
 
 ---
 
-## ⚙️ Setup
+## ⚙️ Commands
 
 ```bash
-make setup   # creates Docker volume folders
-make dev     # starts the stack
+make dev # starts the stack
+make logs # live container logs
+make ps # check running containers
 ```
 
 Access at: **<https://localhost:8443>**
 
 ```bash
-make cleanall  # tears down containers and volumes
+make down # stops containers
+make clean # stops containers and removes images
+make fclean # stops containers, removes images and volumes!!!
+
 ```
 
 ---
@@ -23,71 +27,13 @@ make cleanall  # tears down containers and volumes
 
 | Layer    | Tech                          |
 |----------|-------------------------------|
-| App      | Next.js (pages + API routes)  |
+| App      | Next.js (frontend + API routes)  |
 | Database | PostgreSQL + Prisma ORM       |
 | Gateway  | Caddy (HTTPS, routing)        |
 | Docs     | Swagger                       |
 | Styling  | Bootstrap                     |
 
----
-
-## 🗂️ Project Structure
-
-```
-pages/
-├── api/
-│   ├── auth/
-│   │   ├── login.ts
-│   │   ├── logout.ts
-│   │   ├── me.ts
-│   │   ├── register.ts
-│   │   └── [id].ts
-│   └── users.ts
-├── admin/
-├── login.tsx
-├── profile.tsx
-└── swagger.tsx
-
-components/admin/
-├── AdminLayout.tsx
-├── AdminSidebar.tsx
-├── UserModals.tsx
-└── UsersTable.tsx
-
-hooks/
-├── useAuth.ts
-├── useProfile.ts
-└── useUsers.ts
-```
-
-All API routes live under `pages/api/` and are handled server-side with Prisma + session auth. The frontend consumes them via `fetch('/api/...')`.
-
----
-
-## 🔀 Routing (Caddy)
-
-| Path                          | Target                  |
-|-------------------------------|-------------------------|
-| `/api/*`                      | Next.js API routes      |
-| `/_next/*`, `/public/*`       | Next.js assets          |
-| `/admin/*`, `/swagger*`       | Next.js pages           |
-| `/*`                          | Next.js catch-all       |
-| `/`                           | Static files (`/srv`)   |
-
-HTTP → HTTPS redirect is handled automatically.
-
----
-
-## 🍪 Auth & Sessions
-
-Cookie-based sessions. On login, a session cookie is issued and validated on subsequent requests via `/api/auth/me`.
-
-**To get admin access:**
-
-1. Register with `admin@admin.com`
-2. Run `./adminrole.sh`
-
-> Currently only admin users can access protected content.
+All API routes live under `src/app/api/` and are handled server-side with Prisma. The frontend consumes them via `fetch('/api/...')`.
 
 ---
 
@@ -95,7 +41,7 @@ Cookie-based sessions. On login, a session cookie is issued and validated on sub
 
 | URL                                      | Description       |
 |------------------------------------------|-------------------|
-| `https://localhost:8443`                 | Home              |
+| `https://localhost:8443/`                | Home              |
 | `https://localhost:8443/login`           | Login / Register  |
 | `https://localhost:8443/profile`         | User profile      |
 | `https://localhost:8443/admin/users`     | User management   |
