@@ -13,22 +13,24 @@ services:
         condition: service_healthy
     restart: on-failure
 
-  nginx:
-    build: ./gateway/nginx
-    container_name: nginx
+  caddy:
+    build: ./caddy
+    container_name: caddy
     ports:
       - "8080:80"
+      - "8443:443"
     depends_on:
       - frontend
     networks:
       - transnet
-    restart: on-failure
 
   database:
     image: postgres:16
     container_name: database
     volumes:
       - db-volume:/var/lib/postgresql/data
+    # ports:
+    #   - "5432:5432"
     networks:
       - transnet
     restart: always
