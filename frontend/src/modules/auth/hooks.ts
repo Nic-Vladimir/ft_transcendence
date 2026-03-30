@@ -1,18 +1,25 @@
 import { useState } from "react";
 import type {
-  AuthUser,
+  ApiErrorResponse,
+  AuthUserDto,
   LoginRequest,
   LoginResponse,
+  LogoutResponse,
   RegisterRequest,
   RegisterResponse,
-  LogoutResponse,
-} from "@/contracts/auth";
+} from "@contracts/auth";
+
+type AuthClientUser = Pick<AuthUserDto, "id"> & Partial<Omit<AuthUserDto, "id">>;
+
+function isApiErrorResponse(value: unknown): value is ApiErrorResponse {
+  return typeof value === "object" && value !== null && "error" in value;
+}
 
 export function useAuth() {
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<AuthClientUser | null>(null);
 
   const login = async (
     email: LoginRequest["email"],
@@ -23,20 +30,21 @@ export function useAuth() {
     setSuccessMessage(null);
 
     try {
+      const payload: LoginRequest = { email, password };
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password } satisfies LoginRequest),
+        body: JSON.stringify(payload),
       });
 
       const data: LoginResponse = await res.json();
 
       if (!res.ok) {
-        setErrorMessage(data.error || "Login failed");
+        setErrorMessage(isApiErrorResponse(data) ? data.error : "Login failed");
         return false;
       }
 
-      if (typeof data.id !== "number") {
+      if (!("id" in data) || typeof data.id !== "number") {
         setErrorMessage("Invalid login response");
         return false;
       }
@@ -67,23 +75,16 @@ export function useAuth() {
       const data: RegisterResponse = await res.json();
 
       if (!res.ok) {
-        setErrorMessage(data.error || "Registration failed");
+        setErrorMessage(isApiErrorResponse(data) ? data.error : "Registration failed");
         return false;
       }
 
-      if (typeof data.id !== "number") {
+      if (!("id" in data) || typeof data.id !== "number") {
         setErrorMessage("Invalid registration response");
         return false;
       }
 
-      setUser({
-        id: data.id,
-        username: data.username ?? null,
-        email: data.email ?? null,
-        role: data.role ?? null,
-        created_at: data.created_at ?? null,
-      });
-
+      setUser(data);
       setSuccessMessage("User created");
       return true;
     } catch (err: any) {
@@ -107,12 +108,12 @@ export function useAuth() {
       const data: LogoutResponse = await res.json();
 
       if (!res.ok) {
-        setErrorMessage(data.error || "Logout failed");
+        setErrorMessage(isApiErrorResponse(data) ? data.error : "Logout failed");
         return false;
       }
 
       setUser(null);
-      setSuccessMessage(data.message || "Logged out");
+      setSuccessMessage("message" in data ? data.message : "Logged out");
       return true;
     } catch (err: any) {
       setErrorMessage(err.message || "Logout failed");

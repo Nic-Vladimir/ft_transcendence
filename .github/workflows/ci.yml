@@ -43,5 +43,6 @@ jobs:
         run: |
           docker compose ps
           docker compose logs caddy
+          docker compose logs backend
           docker compose logs frontend
           docker compose logs database

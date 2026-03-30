@@ -1,2 +1,1 @@
-// Server-side user domain exports will go here.
-export {};
+export * from "./service";

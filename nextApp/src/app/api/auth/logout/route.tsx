@@ -1,20 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { serialize } from "cookie";
-
-const SESSION_COOKIE = "session";
+import { logoutUser, SESSION_COOKIE } from "@/modules/auth";
 
 export async function POST(req: NextRequest) {
   try {
     const token = req.cookies.get(SESSION_COOKIE)?.value;
-
-    if (token) {
-      // Delete session from DB
-      await prisma.sessions.deleteMany({ where: { token } });
-    }
+    const result = await logoutUser(token);
 
     // Clear the cookie
-    const res = NextResponse.json({ message: "Logged out successfully" });
+    const res = NextResponse.json(result);
     res.headers.append(
       "Set-Cookie",
       serialize(SESSION_COOKIE, "", {
