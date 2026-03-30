@@ -106,7 +106,7 @@ Rough mapping:
 
 
 
-::: mermaid
+```mermaid
 flowchart TB
     Browser[Browser]
     Caddy["Caddy\nHTTPS ingress / TLS termination\nReverse proxy :8080/:8443"]
@@ -172,10 +172,10 @@ flowchart TB
     Postgres --- AuthTables
     Postgres --- ChallengeTables
 
-:::
+```
 
 ### Mermaid diagram
-::: mermaid
+```mermaid
 flowchart TB
     Client["Client Layer\nWeb UI / Browser / possibly mobile later"]
 
@@ -212,11 +212,11 @@ flowchart TB
     QuizSvc -.-> Redis
     ContentSvc -.-> Redis
 
-:::
+```
 
 # A current-to-target mapping diagram
 
-::: mermaid
+```mermaid
 flowchart LR
     subgraph Current["Current modular monolith"]
         CaddyNow["Caddy"]
@@ -258,13 +258,13 @@ flowchart LR
     PGNow --> ContentDBTarget
 
     RateNow --> RedisTarget
-:::
+```
 
 
 
 # Better version with existing parts named explicitly
 
-::: mermaid
+```mermaid
 flowchart LR
     subgraph Current["Current state"]
         CurUI["Browser UI pages\n/, /login, /profile, /admin/users, /swagger"]
@@ -313,4 +313,4 @@ flowchart LR
     CurDB --> TContentDB
 
     CurRate --> TRedis
-:::
+```

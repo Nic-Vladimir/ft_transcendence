@@ -59,8 +59,7 @@ handle_path /myservice/* {
 }
 ```
 
-
-
+```mermaid
 flowchart LR
     Browser[Browser] --> Caddy[Caddy]
     Caddy --> NextApp[Next.js app\nUI + API in one deployable]
@@ -72,3 +71,4 @@ flowchart LR
     NextApp --- Admin[Admin / User Management]
     NextApp --- Docs[Swagger / OpenAPI]
     NextApp --- Challenge[Challenge domain\nschema only for now]
+```
