@@ -103,3 +103,214 @@ Rough mapping:
 
 ## Diagram
 ![Target Microservice Architecture](./target-microservice-architecture-v0.png)
+
+
+
+::: mermaid
+flowchart TB
+    Browser[Browser]
+    Caddy["Caddy\nHTTPS ingress / TLS termination\nReverse proxy :8080/:8443"]
+
+    subgraph NextApp["Next.js Modular Monolith"]
+        direction TB
+
+        UI["Browser UI\n/\n/login\n/profile\n/admin/users\n/swagger"]
+
+        subgraph ApiLayer["API Routes"]
+            direction TB
+            AuthAPI["Auth API\nPOST /api/auth/register\nPOST /api/auth/login\nPOST /api/auth/logout\nGET /api/auth/me\nPOST /api/auth/password"]
+            UserAPI["User / Profile API\nPUT /api/auth/:id\nDELETE /api/auth/:id\nGET /api/auth/me"]
+            AdminAPI["Admin / User Management API\nGET /api/auth/users\nPUT /api/auth/:id\nDELETE /api/auth/:id"]
+            DocsAPI["API Docs\nGET /api/docs\n/swagger"]
+        end
+
+        subgraph AppLogic["Application / Domain Logic"]
+            direction LR
+            AuthMod["Auth module\nsessions\ncookies\nvalidation\nrate limiting"]
+            UserMod["User / Profile module"]
+            AdminMod["Admin module\nrole checks\nuser management"]
+            DocsMod["OpenAPI / Swagger module"]
+            ChallengeMod["Challenge / Group / Submission domain\nschema exists\nno active API yet"]
+        end
+
+        Prisma["Prisma ORM\nmigrations\nseed\nDB access"]
+    end
+
+    Postgres[("PostgreSQL\nsingle shared database")]
+
+    subgraph Tables["Logical DB Ownership"]
+        direction LR
+        AuthTables["Auth / User tables\nusers\nsessions"]
+        ChallengeTables["Challenge domain tables\ngroups\ngroup_members\nchallenges\ndaily_stars\nsubmissions\nsubmission_photos\nvotes"]
+    end
+
+    Browser -->|HTTPS| Caddy
+    Caddy -->|reverse proxy| UI
+    Caddy -->|reverse proxy| AuthAPI
+    Caddy -->|reverse proxy| UserAPI
+    Caddy -->|reverse proxy| AdminAPI
+    Caddy -->|reverse proxy| DocsAPI
+
+    UI -->|same-origin /api calls| AuthAPI
+    UI -->|same-origin /api calls| UserAPI
+    UI -->|same-origin /api calls| AdminAPI
+    UI -->|same-origin /api calls| DocsAPI
+
+    AuthAPI --> AuthMod
+    UserAPI --> UserMod
+    UserAPI --> AuthMod
+    AdminAPI --> AdminMod
+    AdminAPI --> AuthMod
+    DocsAPI --> DocsMod
+
+    AuthMod --> Prisma
+    UserMod --> Prisma
+    AdminMod --> Prisma
+    ChallengeMod --> Prisma
+
+    Prisma --> Postgres
+    Postgres --- AuthTables
+    Postgres --- ChallengeTables
+
+:::
+
+### Mermaid diagram
+::: mermaid
+flowchart TB
+    Client["Client Layer\nWeb UI / Browser / possibly mobile later"]
+
+    Gateway["Edge Gateway\nCaddy\nTLS termination + routing + basic auth checks"]
+
+    Frontend["Frontend\nNext.js UI"]
+    AuthSvc["Auth Service\nREST API"]
+    UserSvc["User Service\nREST API"]
+    QuizSvc["Quiz Service\nREST API"]
+    ContentSvc["Content Service\nQuestions REST API"]
+
+    AuthDB[("Auth DB")]
+    UserDB[("User DB")]
+    QuizDB[("Quiz DB")]
+    ContentDB[("Content DB")]
+
+    Redis["Redis\ncache / sessions / pub-sub / transient state"]
+
+    Client --> Gateway
+
+    Gateway --> Frontend
+    Gateway --> AuthSvc
+    Gateway --> UserSvc
+    Gateway --> QuizSvc
+    Gateway --> ContentSvc
+
+    AuthSvc --> AuthDB
+    UserSvc --> UserDB
+    QuizSvc --> QuizDB
+    ContentSvc --> ContentDB
+
+    AuthSvc -.-> Redis
+    UserSvc -.-> Redis
+    QuizSvc -.-> Redis
+    ContentSvc -.-> Redis
+
+:::
+
+# A current-to-target mapping diagram
+
+::: mermaid
+flowchart LR
+    subgraph Current["Current modular monolith"]
+        CaddyNow["Caddy"]
+        NextNow["Next.js app\nUI + API"]
+        PrismaNow["Prisma"]
+        PGNow[("Single PostgreSQL")]
+        RateNow["In-memory rate limiting"]
+    end
+
+    subgraph Target["Target service-oriented architecture"]
+        CaddyTarget["Edge Gateway"]
+        FrontendTarget["Frontend"]
+        AuthTarget["Auth Service"]
+        UserTarget["User Service"]
+        QuizTarget["Quiz Service"]
+        ContentTarget["Content Service"]
+        AuthDBTarget[("Auth DB")]
+        UserDBTarget[("User DB")]
+        QuizDBTarget[("Quiz DB")]
+        ContentDBTarget[("Content DB")]
+        RedisTarget["Redis"]
+    end
+
+    CaddyNow --> CaddyTarget
+    NextNow --> FrontendTarget
+    NextNow --> AuthTarget
+    NextNow --> UserTarget
+    NextNow --> QuizTarget
+    NextNow --> ContentTarget
+
+    PrismaNow --> AuthDBTarget
+    PrismaNow --> UserDBTarget
+    PrismaNow --> QuizDBTarget
+    PrismaNow --> ContentDBTarget
+
+    PGNow --> AuthDBTarget
+    PGNow --> UserDBTarget
+    PGNow --> QuizDBTarget
+    PGNow --> ContentDBTarget
+
+    RateNow --> RedisTarget
+:::
+
+
+
+# Better version with existing parts named explicitly
+
+::: mermaid
+flowchart LR
+    subgraph Current["Current state"]
+        CurUI["Browser UI pages\n/, /login, /profile, /admin/users, /swagger"]
+        CurAuth["Auth API\nregister/login/logout/me"]
+        CurUser["User/Profile API\nme/update/delete"]
+        CurAdmin["Admin/User management"]
+        CurDocs["API Docs / Swagger"]
+        CurChallenge["Challenge / Group / Submission domain\nschema only"]
+        CurPrisma["Prisma"]
+        CurDB[("Single PostgreSQL")]
+        CurRate["In-process rate limiting"]
+        CurCaddy["Caddy"]
+    end
+
+    subgraph Target["Target structure"]
+        TFrontend["Frontend"]
+        TAuth["Auth Service"]
+        TUser["User Service"]
+        TQuiz["Quiz Service"]
+        TContent["Content Service"]
+        TGateway["Edge Gateway"]
+        TAuthDB[("Auth DB")]
+        TUserDB[("User DB")]
+        TQuizDB[("Quiz DB")]
+        TContentDB[("Content DB")]
+        TRedis["Redis"]
+        TDocs["Docs aggregation / Swagger"]
+    end
+
+    CurCaddy --> TGateway
+    CurUI --> TFrontend
+    CurAuth --> TAuth
+    CurUser --> TUser
+    CurAdmin --> TUser
+    CurDocs --> TDocs
+    CurChallenge --> TQuiz
+
+    CurPrisma --> TAuthDB
+    CurPrisma --> TUserDB
+    CurPrisma --> TQuizDB
+    CurPrisma --> TContentDB
+
+    CurDB --> TAuthDB
+    CurDB --> TUserDB
+    CurDB --> TQuizDB
+    CurDB --> TContentDB
+
+    CurRate --> TRedis
+:::

@@ -58,3 +58,17 @@ handle_path /myservice/* {
     reverse_proxy myservice:4000
 }
 ```
+
+
+
+flowchart LR
+    Browser[Browser] --> Caddy[Caddy]
+    Caddy --> NextApp[Next.js app\nUI + API in one deployable]
+    NextApp --> Prisma[Prisma]
+    Prisma --> Postgres[(PostgreSQL)]
+
+    NextApp --- Auth[Auth]
+    NextApp --- User[User / Profile]
+    NextApp --- Admin[Admin / User Management]
+    NextApp --- Docs[Swagger / OpenAPI]
+    NextApp --- Challenge[Challenge domain\nschema only for now]
