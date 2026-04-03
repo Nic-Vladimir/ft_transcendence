@@ -1,316 +1,413 @@
-# Target Microservice Architecture (v0)
+# Service Integration Guide (v1)
 
 ## Purpose
-This document describes the target architecture of the project and how it relates to the current repository state. It serves as a reference for organizing the system and guiding future evolution.
 
----
+This document explains how to add and connect a new service or domain in the current project.
 
-## Current implementation state
-The current repository is not yet a full microservice system.
+It is a practical guide for contributors:
 
-At the moment:
-- the application runs as a single Next.js service
-- Caddy is used as the HTTP entrypoint (reverse proxy)
-- PostgreSQL is used as the main database
-- Prisma is present for database access
-- the frontend uses the App Router structure (`src/app`)
-- the current homepage is still close to the default Next.js starter page
-- some auth/user-related support code already exists in `src/lib` and `src/hooks`
+- what exists today
+- where new code should go
+- how to wire it through the system
 
----
+It is not a separate target-system proposal.
 
-## Target architecture
-The target architecture separates the system into logical domains while keeping a simple deployment at the beginning:
+## Current System Overview
 
-- Edge Gateway (Caddy)
-- Frontend Service (Next.js)
-- Auth domain
-- User domain
-- Quiz domain
-- Content domain
-- PostgreSQL (initially shared)
-- Redis as shared infrastructure (optional later)
-- REST APIs for communication
+The repository is currently structured as:
 
-The goal is to define clear boundaries first, and only split into separate services when needed.
+- `caddy/` -> public gateway, HTTPS, TLS termination, routing
+- `frontend/` -> Next.js frontend application
+- `nextApp/` -> Next.js backend application for API routes and business logic
+- `database` -> shared PostgreSQL instance
+- `packages/contracts/` -> shared API request and response types
 
----
+Key rule:
+all external traffic goes through Caddy.
 
-## Component responsibilities
+## Current Repo Mapping
 
-### Client Layer
-The client layer represents the browser-based user interface. Clients communicate only through the Edge Gateway.
+- `frontend/` contains browser pages and client-side modules
+- `nextApp/src/app/api/` contains backend API routes
+- `nextApp/src/modules/` contains backend domain logic
+- `packages/contracts/` contains shared API contracts
+- `caddy/Caddyfile` defines public routing rules
+- `docker-compose.yml` wires the running services together
 
-### Edge Gateway (Caddy)
-Caddy acts as the public entrypoint of the system. It is responsible for:
-- HTTP/HTTPS handling
-- TLS termination
-- request routing
-- forwarding headers
+Current routing:
 
-It should remain thin and must not contain business logic.
+- browser routes -> `frontend`
+- `/api/*` -> `backend`
+- `/health` -> gateway health endpoint
 
-### Frontend Service (Next.js)
-The Frontend Service provides the user interface and handles client interactions. It also currently hosts backend logic through API routes. This service acts as a combined frontend/backend during early development.
+## Core Rules
 
-### Auth Domain
-Responsible for authentication and identity-related operations such as registration, login, logout, and session validation.
+### 1. Keep domain boundaries clear
 
-### User Domain
-Responsible for user profiles, account-related operations, and administrative user management.
+Each feature should belong to a clear domain boundary.
 
-### Quiz Domain
-Responsible for quiz execution, session lifecycle, scoring, and game-related logic.
+Examples:
 
-### Content Domain
-Responsible for question banks, categories, and content management.
+- auth
+- user
+- quiz
+- content
 
-### Database (PostgreSQL)
-Currently a single shared database. In a full microservice architecture, each service would own its own data, but this separation is not required at the beginning.
+Do not add unrelated domain logic inside another domain just because it is convenient.
 
-### Redis (optional)
-Used for caching, sessions, or transient state if needed later. Not required for the initial implementation.
+### 2. Contracts are shared, not behavior
 
----
+All shared API request and response shapes must live in:
 
-## Communication model
-- Clients communicate with the system via HTTPS through Caddy.
-- Caddy routes requests to the Next.js application.
-- Internal communication is currently handled within the same application.
-- Future service-to-service communication will use REST APIs.
-- Each domain should conceptually own its data, even if the database is shared initially.
+```text
+packages/contracts/
+```
 
----
+Contracts may contain:
 
-## Mapping from current repo to target architecture
-The current repository can be understood as a baseline that will evolve toward the target architecture.
+- request types
+- response types
+- DTOs
+- shared API-facing enums and simple types
 
-Rough mapping:
-- Caddy -> Edge Gateway
-- current Next.js app -> frontend + backend combined service
-- auth/user logic in `src/lib` and `src/hooks` -> future domain separation
-- Prisma/PostgreSQL -> initial shared persistence layer
+Contracts must not contain:
 
----
+- hooks
+- fetch logic
+- React state
+- Prisma logic
+- cookie or session implementation
 
-## Evolution strategy
-- Step 1: Keep a single application (Next.js + Postgres)
-- Step 2: Organize code by domain (auth, user, quiz, content)
-- Step 3: Define clear API boundaries (REST)
-- Step 4: Extract services only when needed
+### 3. The gateway is the only public entrypoint
 
----
+Services are exposed through Caddy, not by direct container ports.
 
-## Diagram
-![Target Microservice Architecture](./target-microservice-architecture-v0.png)
+Public API paths should follow:
 
+```text
+/api/<service-name>/*
+```
 
+Examples:
+
+- `/api/auth/*`
+- `/api/user/*`
+- `/api/quiz/*`
+
+Note:
+some existing backend routes are transitional and do not yet follow the final naming pattern exactly. Keep current routes stable unless you are explicitly doing an API migration.
+
+### 4. Backend logic lives in modules or services, not in route handlers
+
+Route handlers should stay thin:
+
+- parse input
+- call module or service code
+- return a response
+
+Business logic belongs in backend-owned code such as:
+
+- `nextApp/src/modules/<domain>/`
+- later, if extracted, `services/<domain>/`
+
+### 5. Frontend always goes through the gateway
+
+Frontend code should call same-origin API paths such as:
+
+```ts
+fetch("/api/quiz/submit", ...)
+```
+
+Do not call backend containers directly from browser code.
+
+## Architecture Direction
+
+New domains do not need to start as standalone services.
+
+There are two valid implementation stages:
+
+- `nextApp/src/modules/<domain>/`
+  Use this when the feature is still evolving, when you want the smallest-risk change, or when the domain still fits comfortably inside the current backend.
+- `services/<domain>/`
+  Use this when the domain already has a stable boundary, needs separate deployment concerns, or is ready for real extraction.
+
+In both cases:
+
+- contracts stay in `packages/contracts/`
+- browser traffic still goes through Caddy
+- public API paths should remain consistent
+
+This means service extraction is an evolution of the current architecture, not a separate architecture.
+
+## How To Add a New Service or Domain
+
+### Step 1. Choose where the new domain starts
+
+Use `nextApp/src/modules/<domain>/` when:
+
+- the feature is new or still changing quickly
+- it shares the current backend deployment
+- you want the smallest implementation risk
+
+Use `services/<domain>/` when:
+
+- the domain boundary is already clear
+- the service needs separate deployment or scaling
+- the team is intentionally extracting it from the backend
+
+Example module-first structure:
+
+```text
+nextApp/src/modules/quiz/
+  service.ts
+```
+
+Example extracted-service structure:
+
+```text
+services/quiz/
+  Dockerfile
+  package.json
+  src/
+```
+
+### Step 2. Define contracts
+
+Add shared API types in:
+
+```text
+packages/contracts/
+```
+
+Example:
+
+```ts
+export type SubmitAnswerRequest = {
+  sessionId: string;
+  answerId: number;
+};
+
+export type SubmitAnswerResponse = {
+  correct: boolean;
+};
+```
+
+Frontend and backend code should both import these shared types instead of redefining them locally.
+
+### Step 3. Implement backend logic
+
+If the domain starts inside `nextApp`:
+
+- add backend logic under `nextApp/src/modules/<domain>/`
+- keep route handlers thin
+- have route handlers call the module service
+
+If the domain starts as an extracted service:
+
+- implement the service in `services/<domain>/`
+- keep its own handlers and business logic inside that service
+
+### Step 4. Expose API routes
+
+If the domain stays inside `nextApp`:
+
+- add routes under `nextApp/src/app/api/`
+- keep the current backend routing shape
+
+If the domain is extracted:
+
+- expose internal routes inside the service
+- let Caddy publish them under `/api/<service-name>/*`
+
+Example internal endpoints:
+
+- `POST /submit`
+- `GET /session/:id`
+
+### Step 5. Add runtime wiring
+
+If the domain stays inside `nextApp`:
+
+- no new Compose service is required
+- no new Caddy route is required if it remains under the generic backend `/api/*` handling
+
+If the domain is extracted:
+
+- add a new service to `docker-compose.yml`
+- connect it to the existing network
+
+Example:
+
+```yaml
+quiz:
+  build: ./services/quiz
+  container_name: quiz
+  networks:
+    - transnet
+```
+
+### Step 6. Connect it in Caddy when needed
+
+Only extracted services need a dedicated Caddy route.
+
+Example:
+
+```caddyfile
+handle_path /api/quiz/* {
+    reverse_proxy quiz:3000
+}
+
+@api path /api/*
+handle @api {
+    reverse_proxy backend:3000
+}
+```
+
+Important:
+more specific service routes must appear before the generic backend `/api/*` handler.
+
+### Step 7. Use it from the frontend
+
+Frontend code should always go through the gateway:
+
+```ts
+fetch("/api/quiz/submit", ...)
+```
+
+This keeps browser code stable whether the domain is still inside `nextApp` or already extracted.
+
+### Step 8. Verify the integration
+
+After wiring a new domain:
+
+```bash
+docker compose up --build -d
+curl -vk https://localhost:8443/health
+```
+
+Then verify:
+
+- the frontend page that uses the feature
+- or the API route through Caddy
+
+## Database Rules
+
+Current state:
+
+- one shared PostgreSQL instance
+
+Rules:
+
+- each domain owns its own tables
+- do not modify another domain's tables without an explicit migration plan
+- do not import another domain's Prisma models or data-access code
+- do not bypass domain boundaries just because the database is shared
+
+The database is shared operationally today, but data ownership should still stay separated by domain.
+
+## Redis
+
+Redis is optional and not required for adding a new domain right now.
+
+Possible future uses:
+
+- sessions
+- caching
+- pub/sub
+- transient state
+
+Do not introduce Redis unless the service has a clear need for it.
+
+## What Not To Do
+
+Do not:
+
+- add business logic in Caddy
+- bypass `packages/contracts`
+- put hooks, fetch code, or Prisma code in shared contracts
+- access another domain's data directly
+- call backend containers directly from frontend code
+- mix unrelated domain logic into an existing module or service
+- redesign working routes as part of an unrelated feature addition
+
+## Existing Services Mapping
+
+Current code already maps cleanly to this structure:
+
+- auth -> `nextApp/src/modules/auth`
+- user -> `nextApp/src/modules/user`
+- frontend UI -> `frontend/src/app`
+- shared contracts -> `packages/contracts`
+- gateway -> `caddy/Caddyfile`
+
+Auth and user are backend modules today. They are the first candidates for later extraction if the project needs it.
+
+## Current Architecture Diagram
 
 ```mermaid
 flowchart TB
     Browser[Browser]
-    Caddy["Caddy\nHTTPS ingress / TLS termination\nReverse proxy :8080/:8443"]
-
-    subgraph NextApp["Next.js Modular Monolith"]
-        direction TB
-
-        UI["Browser UI\n/\n/login\n/profile\n/admin/users\n/swagger"]
-
-        subgraph ApiLayer["API Routes"]
-            direction TB
-            AuthAPI["Auth API\nPOST /api/auth/register\nPOST /api/auth/login\nPOST /api/auth/logout\nGET /api/auth/me\nPOST /api/auth/password"]
-            UserAPI["User / Profile API\nPUT /api/auth/:id\nDELETE /api/auth/:id\nGET /api/auth/me"]
-            AdminAPI["Admin / User Management API\nGET /api/auth/users\nPUT /api/auth/:id\nDELETE /api/auth/:id"]
-            DocsAPI["API Docs\nGET /api/docs\n/swagger"]
-        end
-
-        subgraph AppLogic["Application / Domain Logic"]
-            direction LR
-            AuthMod["Auth module\nsessions\ncookies\nvalidation\nrate limiting"]
-            UserMod["User / Profile module"]
-            AdminMod["Admin module\nrole checks\nuser management"]
-            DocsMod["OpenAPI / Swagger module"]
-            ChallengeMod["Challenge / Group / Submission domain\nschema exists\nno active API yet"]
-        end
-
-        Prisma["Prisma ORM\nmigrations\nseed\nDB access"]
-    end
-
-    Postgres[("PostgreSQL\nsingle shared database")]
-
-    subgraph Tables["Logical DB Ownership"]
-        direction LR
-        AuthTables["Auth / User tables\nusers\nsessions"]
-        ChallengeTables["Challenge domain tables\ngroups\ngroup_members\nchallenges\ndaily_stars\nsubmissions\nsubmission_photos\nvotes"]
-    end
-
-    Browser -->|HTTPS| Caddy
-    Caddy -->|reverse proxy| UI
-    Caddy -->|reverse proxy| AuthAPI
-    Caddy -->|reverse proxy| UserAPI
-    Caddy -->|reverse proxy| AdminAPI
-    Caddy -->|reverse proxy| DocsAPI
-
-    UI -->|same-origin /api calls| AuthAPI
-    UI -->|same-origin /api calls| UserAPI
-    UI -->|same-origin /api calls| AdminAPI
-    UI -->|same-origin /api calls| DocsAPI
-
-    AuthAPI --> AuthMod
-    UserAPI --> UserMod
-    UserAPI --> AuthMod
-    AdminAPI --> AdminMod
-    AdminAPI --> AuthMod
-    DocsAPI --> DocsMod
-
-    AuthMod --> Prisma
-    UserMod --> Prisma
-    AdminMod --> Prisma
-    ChallengeMod --> Prisma
-
-    Prisma --> Postgres
-    Postgres --- AuthTables
-    Postgres --- ChallengeTables
-
-```
-
-### Mermaid diagram
-```mermaid
-flowchart TB
-    Client["Client Layer\nWeb UI / Browser / possibly mobile later"]
-
-    Gateway["Edge Gateway\nCaddy\nTLS termination + routing + basic auth checks"]
+    Caddy["Caddy\nHTTPS ingress / TLS termination"]
 
     Frontend["Frontend\nNext.js UI"]
-    AuthSvc["Auth Service\nREST API"]
-    UserSvc["User Service\nREST API"]
-    QuizSvc["Quiz Service\nREST API"]
-    ContentSvc["Content Service\nQuestions REST API"]
 
-    AuthDB[("Auth DB")]
-    UserDB[("User DB")]
-    QuizDB[("Quiz DB")]
-    ContentDB[("Content DB")]
+    subgraph Backend["Backend\nnextApp"]
+        Api["API routes"]
+        Modules["Domain modules\nauth, user, future domains"]
+    end
 
-    Redis["Redis\ncache / sessions / pub-sub / transient state"]
+    Contracts["packages/contracts\nshared API request/response types"]
+    Postgres[("PostgreSQL\nshared database")]
 
-    Client --> Gateway
+    Browser -->|HTTPS| Caddy
+    Caddy -->|browser routes| Frontend
+    Caddy -->|/api/*| Api
+    Api --> Modules
+    Frontend -->|same-origin API calls| Caddy
+    Frontend -.->|shared types| Contracts
+    Modules -.->|shared types| Contracts
+    Modules --> Postgres
+```
+
+
+
+## Target Architecture Diagram
+
+```mermaid
+
+flowchart TB
+    Browser[Browser]
+
+    Gateway["Caddy Gateway\nHTTPS + routing"]
+
+    Frontend["Frontend\nNext.js UI"]
+    Backend["Backend\nNext.js (modules)"]
+
+    AuthSvc["Auth Service (future/extracted)"]
+    UserSvc["User Service (future/extracted)"]
+    QuizSvc["Quiz Service"]
+    WsSvc["Realtime / WebSocket Service"]
+
+    Postgres[("PostgreSQL")]
+    Redis["Redis (optional)"]
+
+    Browser --> Gateway
 
     Gateway --> Frontend
+    Gateway --> Backend
+
+    %% future/extracted services
     Gateway --> AuthSvc
     Gateway --> UserSvc
     Gateway --> QuizSvc
-    Gateway --> ContentSvc
+    Gateway --> WsSvc
 
-    AuthSvc --> AuthDB
-    UserSvc --> UserDB
-    QuizSvc --> QuizDB
-    ContentSvc --> ContentDB
+    %% data
+    Backend --> Postgres
+    AuthSvc --> Postgres
+    UserSvc --> Postgres
+    QuizSvc --> Postgres
 
-    AuthSvc -.-> Redis
-    UserSvc -.-> Redis
-    QuizSvc -.-> Redis
-    ContentSvc -.-> Redis
+    WsSvc -.-> Redis
 
-```
-
-# A current-to-target mapping diagram
-
-```mermaid
-flowchart LR
-    subgraph Current["Current modular monolith"]
-        CaddyNow["Caddy"]
-        NextNow["Next.js app\nUI + API"]
-        PrismaNow["Prisma"]
-        PGNow[("Single PostgreSQL")]
-        RateNow["In-memory rate limiting"]
-    end
-
-    subgraph Target["Target service-oriented architecture"]
-        CaddyTarget["Edge Gateway"]
-        FrontendTarget["Frontend"]
-        AuthTarget["Auth Service"]
-        UserTarget["User Service"]
-        QuizTarget["Quiz Service"]
-        ContentTarget["Content Service"]
-        AuthDBTarget[("Auth DB")]
-        UserDBTarget[("User DB")]
-        QuizDBTarget[("Quiz DB")]
-        ContentDBTarget[("Content DB")]
-        RedisTarget["Redis"]
-    end
-
-    CaddyNow --> CaddyTarget
-    NextNow --> FrontendTarget
-    NextNow --> AuthTarget
-    NextNow --> UserTarget
-    NextNow --> QuizTarget
-    NextNow --> ContentTarget
-
-    PrismaNow --> AuthDBTarget
-    PrismaNow --> UserDBTarget
-    PrismaNow --> QuizDBTarget
-    PrismaNow --> ContentDBTarget
-
-    PGNow --> AuthDBTarget
-    PGNow --> UserDBTarget
-    PGNow --> QuizDBTarget
-    PGNow --> ContentDBTarget
-
-    RateNow --> RedisTarget
-```
-
-
-
-# Better version with existing parts named explicitly
-
-```mermaid
-flowchart LR
-    subgraph Current["Current state"]
-        CurUI["Browser UI pages\n/, /login, /profile, /admin/users, /swagger"]
-        CurAuth["Auth API\nregister/login/logout/me"]
-        CurUser["User/Profile API\nme/update/delete"]
-        CurAdmin["Admin/User management"]
-        CurDocs["API Docs / Swagger"]
-        CurChallenge["Challenge / Group / Submission domain\nschema only"]
-        CurPrisma["Prisma"]
-        CurDB[("Single PostgreSQL")]
-        CurRate["In-process rate limiting"]
-        CurCaddy["Caddy"]
-    end
-
-    subgraph Target["Target structure"]
-        TFrontend["Frontend"]
-        TAuth["Auth Service"]
-        TUser["User Service"]
-        TQuiz["Quiz Service"]
-        TContent["Content Service"]
-        TGateway["Edge Gateway"]
-        TAuthDB[("Auth DB")]
-        TUserDB[("User DB")]
-        TQuizDB[("Quiz DB")]
-        TContentDB[("Content DB")]
-        TRedis["Redis"]
-        TDocs["Docs aggregation / Swagger"]
-    end
-
-    CurCaddy --> TGateway
-    CurUI --> TFrontend
-    CurAuth --> TAuth
-    CurUser --> TUser
-    CurAdmin --> TUser
-    CurDocs --> TDocs
-    CurChallenge --> TQuiz
-
-    CurPrisma --> TAuthDB
-    CurPrisma --> TUserDB
-    CurPrisma --> TQuizDB
-    CurPrisma --> TContentDB
-
-    CurDB --> TAuthDB
-    CurDB --> TUserDB
-    CurDB --> TQuizDB
-    CurDB --> TContentDB
-
-    CurRate --> TRedis
 ```
