@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createPasswordResetRequest } from "@/modules/auth";
+import { resendVerificationEmail } from "@/modules/auth";
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const result = await createPasswordResetRequest(body);
+    const body = await req.json().catch(() => ({}));
+    const result = await resendVerificationEmail(body);
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: result.status });
     }

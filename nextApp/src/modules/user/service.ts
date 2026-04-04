@@ -1,31 +1,12 @@
 import type { Users } from "@prisma/client";
-import type { AuthUserDto, UserRole } from "@contracts/auth";
+import type { AuthUserDto } from "@contracts/auth";
 import type { UpdateUserRequest, UpdateUserResponse } from "@contracts/user";
 import { prisma } from "@/lib/prisma";
+import { normalizeRole, toAuthUserDto } from "@/modules/auth";
 
 export type ServiceResult<T> =
   | { ok: true; data: T }
   | { ok: false; status: number; error: string };
-
-function normalizeRole(role: string | null): UserRole | null {
-  return role === "admin" || role === "user" ? role : null;
-}
-
-function toAuthUserDto(user: {
-  id: number;
-  username: string | null;
-  email: string;
-  role: string | null;
-  created_at: Date | null;
-}): AuthUserDto {
-  return {
-    id: user.id,
-    username: user.username,
-    email: user.email,
-    role: normalizeRole(user.role),
-    created_at: user.created_at?.toISOString() ?? null,
-  };
-}
 
 function toUpdateUserResponse(user: {
   id: number;
@@ -104,7 +85,7 @@ export async function updateUser(
   const target = resolveTargetUserId(authUser, id);
   if (!target.ok) return target;
 
-  const { username, email, role } = payload;
+  const { username, email } = payload;
   if (!username || !email) {
     return { ok: false, status: 400, error: "username and email are required" };
   }
@@ -126,13 +107,10 @@ export async function updateUser(
     return { ok: false, status: 409, error: "Email or username already in use" };
   }
 
-  const data: Partial<{ username: string; email: string; role?: string }> = {
+  const data: { username: string; email: string } = {
     username,
     email,
   };
-  if (authUser.role === "admin" && role !== undefined) {
-    data.role = role;
-  }
 
   const updatedUser = await prisma.users.update({
     where: { id: target.data },

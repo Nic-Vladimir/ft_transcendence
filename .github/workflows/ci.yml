@@ -35,8 +35,8 @@ jobs:
       - name: Check HTTPS gateway health
         run: curl -k --fail https://localhost:8443/health
 
-      - name: Optional app check (non-blocking)
-        run: curl -k -I https://localhost:8443 || true
+      - name: Run auth smoke checks
+        run: bash scripts/ci-auth-smoke.sh
 
       - name: Show logs on failure
         if: failure()

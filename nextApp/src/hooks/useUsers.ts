@@ -33,12 +33,28 @@ export function useUsers() {
   };
 
   const updateUser = async (id: number, payload: any) => {
-    const res = await fetch(`/api/auth/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    const updated = await res.json();
+    const { role, ...profilePayload } = payload;
+    let updated: any = {};
+
+    if (profilePayload.username && profilePayload.email) {
+      const res = await fetch(`/api/auth/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profilePayload),
+      });
+      updated = await res.json();
+    }
+
+    if (role !== undefined) {
+      const roleRes = await fetch(`/api/auth/users/${id}/role`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      });
+      const roleUpdated = await roleRes.json();
+      updated = { ...updated, ...roleUpdated };
+    }
+
     setUsers(u =>
       u.map(user =>
         user.id === id

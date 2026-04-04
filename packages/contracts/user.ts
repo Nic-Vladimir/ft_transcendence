@@ -3,7 +3,6 @@ import type { ApiErrorResponse, AuthUserDto, UserRole } from "./auth";
 export interface UpdateUserRequest {
   username: string;
   email: string;
-  role?: UserRole;
 }
 
 export interface UpdateUserResponse {

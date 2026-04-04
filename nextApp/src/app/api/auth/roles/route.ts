@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createPasswordResetRequest } from "@/modules/auth";
+import { listSupportedRoles, requireAuth } from "@/modules/auth";
 
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
+  const auth = await requireAuth(req);
+  if (auth.response) return auth.response;
+
   try {
-    const body = await req.json();
-    const result = await createPasswordResetRequest(body);
+    const result = await listSupportedRoles(auth.user);
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: result.status });
     }

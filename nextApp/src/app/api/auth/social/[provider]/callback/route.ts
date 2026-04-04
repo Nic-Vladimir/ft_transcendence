@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createPasswordResetRequest } from "@/modules/auth";
+import { handleSocialLoginCallback } from "@/modules/auth";
 
-export async function POST(req: NextRequest) {
+export async function GET(
+  _req: NextRequest,
+  context: { params: Promise<{ provider: string }> }
+): Promise<NextResponse> {
+  const { provider } = await context.params;
+
   try {
-    const body = await req.json();
-    const result = await createPasswordResetRequest(body);
+    const result = await handleSocialLoginCallback(provider);
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: result.status });
     }

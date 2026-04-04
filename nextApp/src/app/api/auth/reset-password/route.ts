@@ -1,26 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  createSessionCookie,
-  loginUser,
-} from "@/modules/auth";
+import { resetPasswordWithToken } from "@/modules/auth";
 
 export async function POST(req: NextRequest) {
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0] ??
-    "unknown";
-
   try {
     const body = await req.json();
-    const result = await loginUser(body, ip);
+    const result = await resetPasswordWithToken(body);
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: result.status });
     }
 
-    const res = NextResponse.json(result.data.body);
-    res.headers.append("Set-Cookie", createSessionCookie(result.data.sessionToken));
-
-    return res;
-
+    return NextResponse.json(result.data);
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
