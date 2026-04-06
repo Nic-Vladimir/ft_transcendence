@@ -15,12 +15,15 @@ async function main() {
 
   await prisma.users.upsert({
     where: { email: adminEmail },
-    update: {},
+    update: {
+      email_verified_at: new Date(),
+    },
     create: {
       email: adminEmail,
       username: "admin",
       password_hash: passwordHash,
       role: "admin",
+      email_verified_at: new Date(),
     },
   });
 

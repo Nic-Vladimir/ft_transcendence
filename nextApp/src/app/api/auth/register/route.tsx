@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createEmailVerificationToken } from "@/lib/emailVerification";
 import { prisma } from "@/lib/prisma";
 import * as bcrypt from "bcryptjs";
 
@@ -38,6 +39,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    await createEmailVerificationToken(user.id, user.email);
+
     return NextResponse.json(
       {
         id: user.id,
@@ -51,7 +54,5 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }

@@ -41,26 +41,38 @@ export async function POST(req: NextRequest) {
 
   try {
     const { email, password } = await req.json();
+    const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
 
-    if (!email || !password) {
+    if (!normalizedEmail || !password) {
       return NextResponse.json({ error: "email and password are required" }, { status: 400 });
     }
 
     // Rate limiting
-    if (!checkRateLimit(ip, email)) {
+    if (!checkRateLimit(ip, normalizedEmail)) {
       return NextResponse.json({ error: "Too many login attempts. Try again later." }, { status: 429 });
     }
 
     // Find user
-    const user = await prisma.users.findUnique({ where: { email } });
+    const user = await prisma.users.findUnique({ where: { email: normalizedEmail } });
     if (!user) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
 
     // Check password
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
 
+    if (user.role !== "admin" && !user.email_verified_at) {
+      return NextResponse.json(
+        {
+          code: "EMAIL_NOT_VERIFIED",
+          email: user.email,
+          error: "Please verify your email first.",
+        },
+        { status: 403 }
+      );
+    }
+
     // Clear rate limit on success
-    clearRateLimit(ip, email);
+    clearRateLimit(ip, normalizedEmail);
 
     // Create session
     const token = randomBytes(32).toString("hex");
