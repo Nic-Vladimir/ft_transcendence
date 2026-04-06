@@ -44,6 +44,8 @@ All API routes live under `src/app/api/` and are handled server-side with Prisma
 | `https://localhost:8443/`                | Home              |
 | `https://localhost:8443/login`           | Login / Register  |
 | `https://localhost:8443/profile`         | User profile      |
+| `https://localhost:8443/dashboard`       | Dashboard         |
+| `https://localhost:8443/legal`           | Privacy/Terms     |
 | `https://localhost:8443/admin/users`     | User management   |
 | `https://localhost:8443/swagger`         | API docs          |
 
