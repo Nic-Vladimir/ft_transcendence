@@ -1,4 +1,4 @@
-//import React from "react";
+import React from "react";
 import { Lock, Scale, ShieldAlert, CircleUserRound, Globe } from "lucide-react";
 import Link from "next/link";
 
@@ -36,7 +36,7 @@ export default function LegalPolicyPage() {
             </Link>
           </div>
 
-          {/* hero */}
+          {/* head */}
           <div className="mt-14 flex flex-col items-center text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold tracking-[0.28em] text-slate-300/90 backdrop-blur-md">
               <Scale className="h-3.5 w-3.5 text-amber-400" />
@@ -134,10 +134,6 @@ export default function LegalPolicyPage() {
 
           <div className="h-14" />
         </main>
-
-        {/* subtle floating ornaments */}
-        <div className="pointer-events-none absolute left-[-8rem] top-1/3 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
-        <div className="pointer-events-none absolute right-[-6rem] top-1/4 h-64 w-64 rounded-full bg-violet-500/10 blur-3xl" />
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-//import React from "react";
+import React from "react";
 import { Scale } from "lucide-react";
 import Link from "next/link";
 
@@ -24,7 +24,7 @@ export default function LegalTermsPage() {
             </button>
           </div>
 
-          {/* hero */}
+          {/* head */}
           <div className="mt-14 text-center">
 			<div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold tracking-[0.28em] text-slate-300/90 backdrop-blur-md">
 			  <Scale className="h-3.5 w-3.5 text-amber-400" />
