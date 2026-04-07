@@ -6,7 +6,16 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import '@/styles/admin.css';
 
 export default function AuthPage() {
-  const { login, register, loading, errorMessage, successMessage, setSuccessMessage } = useAuth();
+  const {
+    login,
+    register,
+    resendVerification,
+    loading,
+    errorMessage,
+    successMessage,
+    pendingVerificationEmail,
+    setSuccessMessage,
+  } = useAuth();
   const [isLogin, setIsLogin] = useState(true); // toggle state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,7 +31,7 @@ export default function AuthPage() {
     } else {
       success = await register({ username, email, password }); // username вместо name
       if (success) {
-        setSuccessMessage('Registration successful! You can now login.');
+        setSuccessMessage('Registration successful! Check your email, then login.');
         setIsLogin(true);
       }
     }
@@ -34,6 +43,19 @@ export default function AuthPage() {
         <h3 className="mb-3 text-center">{isLogin ? 'Login' : 'Register'}</h3>
 
         {errorMessage && <div className="alert alert-danger py-2">{errorMessage}</div>}
+        {isLogin && pendingVerificationEmail && (
+          <div className="alert alert-warning py-2">
+            <div className="mb-2">Your email is not verified yet.</div>
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-warning"
+              disabled={loading}
+              onClick={() => resendVerification(pendingVerificationEmail)}
+            >
+              Resend verification email
+            </button>
+          </div>
+        )}
         {successMessage && (
           <div className="alert alert-success py-2">
             {successMessage}
