@@ -9,6 +9,9 @@ export default function ResetPasswordPage() {
   const [token, setToken] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -47,6 +50,10 @@ export default function ResetPasswordPage() {
 
   async function handleResetPassword(e: React.FormEvent) {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      setErrorMessage('Passwords do not match.');
+      return;
+    }
     setLoading(true);
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -66,6 +73,10 @@ export default function ResetPasswordPage() {
 
       setSuccessMessage(data.message || 'Password reset successfully.');
       setPassword('');
+      setConfirmPassword('');
+      window.setTimeout(() => {
+        window.location.href = '/login?reset=success';
+      }, 1200);
     } catch {
       setErrorMessage('Unable to reset password.');
     } finally {
@@ -80,21 +91,57 @@ export default function ResetPasswordPage() {
 
         {errorMessage && <div className="alert alert-danger py-2">{errorMessage}</div>}
         {successMessage && <div className="alert alert-success py-2">{successMessage}</div>}
+        {token && password && confirmPassword && password !== confirmPassword && (
+          <div className="alert alert-danger py-2">Passwords do not match.</div>
+        )}
 
         {token ? (
           <form onSubmit={handleResetPassword}>
             <div className="mb-3">
               <label className="form-label">New password</label>
-              <input
-                type="password"
-                className="form-control"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-              />
+              <div className="input-group">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  className="form-control"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() => setShowPassword(prev => !prev)}
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
             </div>
 
-            <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+            <div className="mb-3">
+              <label className="form-label">Confirm new password</label>
+              <div className="input-group">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  className="form-control"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() => setShowConfirmPassword(prev => !prev)}
+                >
+                  {showConfirmPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-primary w-100"
+              disabled={loading || password !== confirmPassword}
+            >
               {loading ? <span className="spinner-border spinner-border-sm" /> : 'Reset password'}
             </button>
           </form>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '@/styles/admin.css';
@@ -19,7 +19,21 @@ export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true); // toggle state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [username, setUsername] = useState(''); // only for registration
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('reset') === 'success') {
+      setSuccessMessage('Password reset successful. You can now log in with your new password.');
+      params.delete('reset');
+      const nextQuery = params.toString();
+      const nextUrl = nextQuery ? `/login?${nextQuery}` : '/login';
+      window.history.replaceState({}, '', nextUrl);
+    }
+  }, [setSuccessMessage]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,10 +43,17 @@ export default function AuthPage() {
       success = await login(email, password);
       if (success) window.location.href = '/admin/users';
     } else {
+      if (password !== confirmPassword) {
+        return;
+      }
       success = await register({ username, email, password }); // username вместо name
       if (success) {
         setSuccessMessage('Registration successful! Check your email, then login.');
         setIsLogin(true);
+        setPassword('');
+        setConfirmPassword('');
+        setShowPassword(false);
+        setShowConfirmPassword(false);
       }
     }
   };
@@ -43,6 +64,9 @@ export default function AuthPage() {
         <h3 className="mb-3 text-center">{isLogin ? 'Login' : 'Register'}</h3>
 
         {errorMessage && <div className="alert alert-danger py-2">{errorMessage}</div>}
+        {!isLogin && password && confirmPassword && password !== confirmPassword && (
+          <div className="alert alert-danger py-2">Passwords do not match.</div>
+        )}
         {isLogin && pendingVerificationEmail && (
           <div className="alert alert-warning py-2">
             <div className="mb-2">Your email is not verified yet.</div>
@@ -90,16 +114,51 @@ export default function AuthPage() {
 
           <div className="mb-3">
             <label className="form-label">Password</label>
-            <input
-              type="password"
-              className="form-control"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-            />
+            <div className="input-group">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                className="form-control"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={() => setShowPassword(prev => !prev)}
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </div>
           </div>
 
-          <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+          {!isLogin && (
+            <div className="mb-3">
+              <label className="form-label">Confirm password</label>
+              <div className="input-group">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  className="form-control"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() => setShowConfirmPassword(prev => !prev)}
+                >
+                  {showConfirmPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className="btn btn-primary w-100"
+            disabled={loading || (!isLogin && password !== confirmPassword)}
+          >
             {loading ? <span className="spinner-border spinner-border-sm" /> : isLogin ? 'Login' : 'Register'}
           </button>
         </form>
