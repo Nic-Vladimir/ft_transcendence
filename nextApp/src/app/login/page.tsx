@@ -105,6 +105,13 @@ export default function AuthPage() {
         </form>
 
         <div className="mt-3 text-center">
+          {isLogin && (
+            <div className="mb-2">
+              <a href="/reset-password" className="btn btn-link p-0">
+                Forgot password?
+              </a>
+            </div>
+          )}
           <button
             className="btn btn-link"
             onClick={() => setIsLogin(!isLogin)}
