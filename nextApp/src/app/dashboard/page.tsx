@@ -55,7 +55,7 @@ export default function Dashboard() {
               <div className="mt-auto pt-8">
                 <div className="flex flex-col gap-2">
 				  <Link
-					href="/dashboard"
+					href="/login"
 					className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-red-400 transition hover:bg-white/10 hover:text-red-300"
 				  >
 					Logout
