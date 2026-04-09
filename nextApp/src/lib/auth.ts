@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "./prisma";
 import type { Users } from "@prisma/client";
+import { isPendingTwoFactorToken } from "./session";
 
 type AuthSuccess = {
   user: Users;
@@ -14,7 +15,7 @@ type AuthFailure = {
 
 export async function requireAuth(req: NextRequest): Promise<AuthSuccess | AuthFailure> {
   const token = req.cookies.get("session")?.value;
-  if (!token) {
+  if (!token || isPendingTwoFactorToken(token)) {
     return {
       user: null,
       response: NextResponse.json({ error: "Not authenticated" }, { status: 401 }),

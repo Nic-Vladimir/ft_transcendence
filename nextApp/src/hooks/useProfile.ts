@@ -4,6 +4,7 @@ type UserProfile = {
   id: number;
   username: string;
   email: string;
+  two_factor_enabled: boolean;
 };
 
 type UseProfileHook = {
@@ -27,8 +28,12 @@ export function useProfile(): UseProfileHook {
       const res = await fetch("/api/auth/me");
       if (!res.ok) throw new Error("Failed to fetch profile");
       const data = await res.json();
-      // оставляем только username и email
-      setUser({ id: data.id, username: data.username, email: data.email });
+      setUser({
+        id: data.id,
+        username: data.username,
+        email: data.email,
+        two_factor_enabled: Boolean(data.two_factor_enabled),
+      });
     } catch (err: any) {
       setError(err.message || "Unknown error");
     } finally {
@@ -57,7 +62,12 @@ export function useProfile(): UseProfileHook {
           throw new Error(errData.error || "Failed to update profile");
         }
         const updated = await res.json();
-        setUser({ id: updated.id, username: updated.username, email: updated.email });
+        setUser(prev => prev ? {
+          ...prev,
+          id: updated.id,
+          username: updated.username,
+          email: updated.email,
+        } : null);
       } catch (err: any) {
         setError(err.message || "Unknown error");
       } finally {

@@ -1,4 +1,5 @@
 interface Props {
+	roles: string[];
 	editingUser: any;
 	setEditingUser: any;
 	handleSaveEdit: () => void;
@@ -10,6 +11,7 @@ interface Props {
   }
   
   export default function UserModals({
+	roles,
 	editingUser,
 	setEditingUser,
 	handleSaveEdit,
@@ -42,7 +44,14 @@ interface Props {
 			  <h6>Edit user</h6>
 			  <input className="form-control mb-2" value={editingUser.username} onChange={e => setEditingUser({ ...editingUser, username: e.target.value })} />
 			  <input className="form-control mb-2" value={editingUser.email} onChange={e => setEditingUser({ ...editingUser, email: e.target.value })} />
-			  <input className="form-control mb-3" value={editingUser.role} onChange={e => setEditingUser({ ...editingUser, role: e.target.value })} />
+			  <select className="form-select mb-3" value={editingUser.role ?? ''} onChange={e => setEditingUser({ ...editingUser, role: e.target.value })}>
+				<option value="" disabled>Select role</option>
+				{roles.map(role => (
+				  <option key={role} value={role}>
+					{role}
+				  </option>
+				))}
+			  </select>
 			  <div className="text-end">
 				<button className="btn btn-light btn-sm me-2" onClick={() => setEditingUser(null)}>Cancel</button>
 				<button className="btn btn-dark btn-sm" onClick={handleSaveEdit}>Save</button>

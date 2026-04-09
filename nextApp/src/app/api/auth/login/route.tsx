@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import * as bcrypt from "bcryptjs";
-import { randomBytes } from "crypto";
-import { serialize } from "cookie";
+import {
+  appendPendingTwoFactorCookie,
+  appendSessionCookie,
+  clearCookie,
+  createPendingTwoFactorToken,
+  createSessionToken,
+  getPendingTwoFactorExpiry,
+  getSessionExpiry,
+  PENDING_2FA_COOKIE,
+  SESSION_COOKIE,
+} from "@/lib/session";
 
 // ----------------- Rate limiter -----------------
 type RateEntry = { count: number; resetAt: number };
@@ -29,10 +38,6 @@ function checkRateLimit(ip: string, email: string): boolean {
 function clearRateLimit(ip: string, email: string) {
   attempts.delete(`${ip}:${email}`);
 }
-
-// ----------------- Session constants -----------------
-const SESSION_COOKIE = "session";
-const SESSION_TTL_DAYS = 7;
 
 export async function POST(req: NextRequest) {
   const ip =
@@ -71,30 +76,53 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const twoFactorCredential = await prisma.twoFactorCredential.findUnique({
+      where: { user_id: user.id },
+    });
+
     // Clear rate limit on success
     clearRateLimit(ip, normalizedEmail);
 
-    // Create session
-    const token = randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000);
+    if (twoFactorCredential?.enabled_at) {
+      const pendingToken = createPendingTwoFactorToken();
+      const pendingExpiresAt = getPendingTwoFactorExpiry();
+
+      await prisma.sessions.deleteMany({
+        where: {
+          user_id: user.id,
+          token: { startsWith: "p2fa_" },
+        },
+      });
+
+      await prisma.sessions.create({
+        data: { user_id: user.id, token: pendingToken, expires_at: pendingExpiresAt },
+      });
+
+      const res = NextResponse.json(
+        {
+          code: "TWO_FACTOR_REQUIRED",
+          error: "Two-factor authentication code required.",
+        },
+        { status: 202 }
+      );
+      clearCookie(res, SESSION_COOKIE);
+      appendPendingTwoFactorCookie(res, pendingToken);
+      return res;
+    }
+
+    const token = createSessionToken();
+    const expiresAt = getSessionExpiry();
 
     await prisma.sessions.create({
       data: { user_id: user.id, token, expires_at: expiresAt },
     });
 
-    // Set HttpOnly cookie
-    const res = NextResponse.json({ id: user.id });
-    res.headers.append(
-      "Set-Cookie",
-      serialize(SESSION_COOKIE, token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: SESSION_TTL_DAYS * 24 * 60 * 60,
-      })
-    );
-
+    const res = NextResponse.json({
+      id: user.id,
+      redirect_to: user.role === "admin" ? "/admin/users" : "/profile",
+    });
+    appendSessionCookie(res, token);
+    clearCookie(res, PENDING_2FA_COOKIE);
     return res;
 
   } catch (err) {
