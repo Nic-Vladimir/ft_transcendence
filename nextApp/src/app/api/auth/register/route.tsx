@@ -6,7 +6,9 @@ import * as bcrypt from "bcryptjs";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { username, email, password } = body;
+    const username = typeof body?.username === "string" ? body.username.trim() : "";
+    const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+    const password = typeof body?.password === "string" ? body.password : "";
 
     if (!username || !email || !password) {
       return NextResponse.json(
@@ -15,27 +17,46 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if user already exists
-    const exists = await prisma.users.findFirst({
-      where: {
-        OR: [{ username }, { email }],
-      },
-    });
+    const [existingEmailUser, existingUsernameUser] = await prisma.$transaction([
+      prisma.users.findUnique({
+        where: { email },
+        select: { id: true },
+      }),
+      prisma.users.findFirst({
+        where: { username },
+        select: { id: true },
+      }),
+    ]);
 
-    if (exists) {
-      return NextResponse.json({ error: "User already exists" }, { status: 409 });
+    if (existingEmailUser && existingUsernameUser) {
+      return NextResponse.json(
+        { error: "This email and username are already in use." },
+        { status: 409 }
+      );
     }
 
-    // Hash the password
+    if (existingEmailUser) {
+      return NextResponse.json(
+        { error: "This email is already linked to an existing account." },
+        { status: 409 }
+      );
+    }
+
+    if (existingUsernameUser) {
+      return NextResponse.json(
+        { error: "This username is already taken." },
+        { status: 409 }
+      );
+    }
+
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Create the user
     const user = await prisma.users.create({
       data: {
         username,
         email,
         password_hash: passwordHash,
-        role: "user", // default role
+        role: "user",
       },
     });
 

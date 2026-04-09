@@ -26,7 +26,7 @@ export async function PUT(
 
   try {
     const body = await req.json();
-    const { username, email, role } = body;
+    const { username, email } = body;
     if (!username || !email)
       return NextResponse.json({ error: "username and email are required" }, { status: 400 });
 
@@ -41,8 +41,7 @@ export async function PUT(
     });
     if (duplicate) return NextResponse.json({ error: "Email or username already in use" }, { status: 409 });
 
-    const data: Partial<{ username: string; email: string; role?: string }> = { username, email };
-    if (authUser.role === "admin" && role !== undefined) data.role = role;
+    const data: Partial<{ username: string; email: string }> = { username, email };
 
     const updatedUser = await prisma.users.update({ where: { id: targetUserId }, data });
     return NextResponse.json({

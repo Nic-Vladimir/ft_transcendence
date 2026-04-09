@@ -35,6 +35,15 @@ make fclean # stops containers, removes images and volumes!!!
 
 All API routes live under `src/app/api/` and are handled server-side with Prisma. The frontend consumes them via `fetch('/api/...')`.
 
+For optional auth features, local env values can be copied from `.env.dev` into your local `.env`.
+Google social login needs:
+
+```env
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+APP_URL=https://localhost:8443
+```
+
 ---
 
 ## 🌐 Pages

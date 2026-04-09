@@ -16,6 +16,11 @@ export async function GET(req: NextRequest) {
         email: true,
         role: true,
         created_at: true,
+        two_factor_credential: {
+          select: {
+            enabled_at: true,
+          },
+        },
       },
     });
 
@@ -23,7 +28,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json(user);
+    return NextResponse.json({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      created_at: user.created_at,
+      two_factor_enabled: Boolean(user.two_factor_credential?.enabled_at),
+    });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

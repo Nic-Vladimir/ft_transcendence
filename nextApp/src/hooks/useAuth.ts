@@ -8,17 +8,24 @@ type User = {
   created_at?: string;
 };
 
+type AuthSuccess = {
+  id: string;
+  redirectTo: string;
+};
+
 export function useAuth() {
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string | null>(null);
+  const [twoFactorRequired, setTwoFactorRequired] = useState(false);
   const [user, setUser] = useState<User | null>(null);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<AuthSuccess | null> => {
     setLoading(true);
     setErrorMessage(null);
     setPendingVerificationEmail(null);
+    setTwoFactorRequired(false);
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -28,20 +35,60 @@ export function useAuth() {
 
       const data = await res.json();
 
+      if (res.status === 202 && data.code === "TWO_FACTOR_REQUIRED") {
+        setTwoFactorRequired(true);
+        setSuccessMessage("Enter your 2FA code to finish logging in.");
+        return null;
+      }
+
       if (!res.ok) {
         if (res.status === 403 && data.code === "EMAIL_NOT_VERIFIED") {
           setPendingVerificationEmail(data.email || email.trim().toLowerCase());
         }
         setErrorMessage(data.error || "Login failed");
-        return false;
+        return null;
       }
 
       setUser({ id: data.id });
       setSuccessMessage("Login successful");
-      return true;
+      return {
+        id: data.id,
+        redirectTo: typeof data.redirect_to === "string" ? data.redirect_to : "/profile",
+      };
     } catch (err: any) {
       setErrorMessage(err.message || "Login failed");
-      return false;
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyTwoFactor = async (code: string): Promise<AuthSuccess | null> => {
+    setLoading(true);
+    setErrorMessage(null);
+    try {
+      const res = await fetch("/api/auth/2fa/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErrorMessage(data.error || "2FA verification failed");
+        return null;
+      }
+
+      setTwoFactorRequired(false);
+      setUser({ id: data.id });
+      setSuccessMessage("Login successful");
+      return {
+        id: data.id,
+        redirectTo: typeof data.redirect_to === "string" ? data.redirect_to : "/profile",
+      };
+    } catch (err: any) {
+      setErrorMessage(err.message || "2FA verification failed");
+      return null;
     } finally {
       setLoading(false);
     }
@@ -51,6 +98,7 @@ export function useAuth() {
     setLoading(true);
     setErrorMessage(null);
     setPendingVerificationEmail(null);
+    setTwoFactorRequired(false);
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -113,6 +161,7 @@ export function useAuth() {
   const logout = () => {
     setUser(null);
     setPendingVerificationEmail(null);
+    setTwoFactorRequired(false);
     setSuccessMessage("Logged out");
   };
 
@@ -122,9 +171,12 @@ export function useAuth() {
     successMessage,
     errorMessage,
     pendingVerificationEmail,
+    twoFactorRequired,
+    setTwoFactorRequired,
     setSuccessMessage,
     setErrorMessage,
     login,
+    verifyTwoFactor,
     logout,
     register,
     resendVerification,
