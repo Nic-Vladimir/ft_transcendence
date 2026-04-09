@@ -16,9 +16,10 @@ import {
 } from "@/lib/session";
 
 export const SOCIAL_PROVIDER_GOOGLE = "google";
+export const SOCIAL_PROVIDER_GITHUB = "github";
 const SOCIAL_STATE_COOKIE_PREFIX = "oauth_state_";
 
-type SupportedProvider = typeof SOCIAL_PROVIDER_GOOGLE;
+type SupportedProvider = typeof SOCIAL_PROVIDER_GOOGLE | typeof SOCIAL_PROVIDER_GITHUB;
 
 type GoogleTokenResponse = {
   access_token: string;
@@ -31,6 +32,31 @@ type GoogleUserInfo = {
   email_verified?: boolean;
   given_name?: string;
   name?: string;
+};
+
+type GitHubTokenResponse = {
+  access_token?: string;
+  error?: string;
+};
+
+type GitHubUserProfile = {
+  id: number;
+  email: string | null;
+  login?: string;
+  name?: string;
+};
+
+type GitHubEmail = {
+  email: string;
+  primary?: boolean;
+  verified?: boolean;
+};
+
+type SocialProfile = {
+  providerUserId: string;
+  email: string;
+  emailVerified: boolean;
+  fallbackName?: string;
 };
 
 function getAppUrl(): string {
@@ -56,8 +82,19 @@ function getGoogleCredentials() {
   return { clientId, clientSecret };
 }
 
+function getGitHubCredentials() {
+  const clientId = process.env.GITHUB_CLIENT_ID?.trim();
+  const clientSecret = process.env.GITHUB_CLIENT_SECRET?.trim();
+
+  if (!clientId || !clientSecret) {
+    throw new Error("GitHub OAuth is not configured");
+  }
+
+  return { clientId, clientSecret };
+}
+
 export function isSupportedSocialProvider(provider: string): provider is SupportedProvider {
-  return provider === SOCIAL_PROVIDER_GOOGLE;
+  return provider === SOCIAL_PROVIDER_GOOGLE || provider === SOCIAL_PROVIDER_GITHUB;
 }
 
 export function createSocialState(): string {
@@ -91,19 +128,29 @@ export function clearSocialStateCookie(res: NextResponse, provider: SupportedPro
 }
 
 export function buildSocialStartUrl(provider: SupportedProvider, state: string): string {
-  if (provider !== SOCIAL_PROVIDER_GOOGLE) {
-    throw new Error("Unsupported social provider");
+  if (provider === SOCIAL_PROVIDER_GOOGLE) {
+    const { clientId } = getGoogleCredentials();
+    const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    url.searchParams.set("client_id", clientId);
+    url.searchParams.set("redirect_uri", redirectUri(provider));
+    url.searchParams.set("response_type", "code");
+    url.searchParams.set("scope", "openid email profile");
+    url.searchParams.set("state", state);
+    url.searchParams.set("prompt", "select_account");
+    return url.toString();
   }
 
-  const { clientId } = getGoogleCredentials();
-  const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-  url.searchParams.set("client_id", clientId);
-  url.searchParams.set("redirect_uri", redirectUri(provider));
-  url.searchParams.set("response_type", "code");
-  url.searchParams.set("scope", "openid email profile");
-  url.searchParams.set("state", state);
-  url.searchParams.set("prompt", "select_account");
-  return url.toString();
+  if (provider === SOCIAL_PROVIDER_GITHUB) {
+    const { clientId } = getGitHubCredentials();
+    const url = new URL("https://github.com/login/oauth/authorize");
+    url.searchParams.set("client_id", clientId);
+    url.searchParams.set("redirect_uri", redirectUri(provider));
+    url.searchParams.set("scope", "read:user user:email");
+    url.searchParams.set("state", state);
+    return url.toString();
+  }
+
+  throw new Error("Unsupported social provider");
 }
 
 async function exchangeGoogleCode(code: string): Promise<GoogleTokenResponse> {
@@ -147,6 +194,78 @@ async function fetchGoogleUserInfo(accessToken: string): Promise<GoogleUserInfo>
   return data as GoogleUserInfo;
 }
 
+async function exchangeGitHubCode(code: string): Promise<GitHubTokenResponse> {
+  const { clientId, clientSecret } = getGitHubCredentials();
+  const body = new URLSearchParams({
+    code,
+    client_id: clientId,
+    client_secret: clientSecret,
+    redirect_uri: redirectUri(SOCIAL_PROVIDER_GITHUB),
+  });
+
+  const res = await fetch("https://github.com/login/oauth/access_token", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: body.toString(),
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.access_token) {
+    throw new Error(data.error || "GitHub token exchange failed");
+  }
+
+  return data as GitHubTokenResponse;
+}
+
+async function fetchGitHubProfile(accessToken: string): Promise<SocialProfile> {
+  const headers = {
+    Accept: "application/json",
+    Authorization: `Bearer ${accessToken}`,
+    "User-Agent": "ft_transcendence",
+  };
+
+  const userRes = await fetch("https://api.github.com/user", { headers });
+  const userData = (await userRes.json()) as GitHubUserProfile;
+
+  if (!userRes.ok || !userData.id) {
+    throw new Error("Failed to fetch GitHub profile");
+  }
+
+  let email = typeof userData.email === "string" ? userData.email.trim().toLowerCase() : "";
+  let emailVerified = Boolean(email);
+
+  if (!email) {
+    const emailsRes = await fetch("https://api.github.com/user/emails", { headers });
+    const emailsData = (await emailsRes.json()) as GitHubEmail[];
+
+    if (!emailsRes.ok || !Array.isArray(emailsData)) {
+      throw new Error("GitHub account email is not available");
+    }
+
+    const preferredEmail =
+      emailsData.find((entry) => entry.primary && entry.verified && entry.email) ??
+      emailsData.find((entry) => entry.verified && entry.email) ??
+      emailsData.find((entry) => entry.email);
+
+    if (!preferredEmail?.email) {
+      throw new Error("GitHub account email is not available");
+    }
+
+    email = preferredEmail.email.trim().toLowerCase();
+    emailVerified = Boolean(preferredEmail.verified);
+  }
+
+  return {
+    providerUserId: String(userData.id),
+    email,
+    emailVerified,
+    fallbackName: userData.login || userData.name || undefined,
+  };
+}
+
 async function generateUniqueUsername(baseEmail: string, fallbackName?: string): Promise<string> {
   const preferred = (fallbackName || baseEmail.split("@")[0] || "user")
     .trim()
@@ -172,12 +291,15 @@ type SocialUserResult = {
   requiresTwoFactor: boolean;
 };
 
-async function resolveGoogleUser(profile: GoogleUserInfo): Promise<SocialUserResult> {
+async function resolveSocialUser(
+  provider: SupportedProvider,
+  profile: SocialProfile
+): Promise<SocialUserResult> {
   const existingAccount = await prisma.oAuthAccount.findUnique({
     where: {
       provider_provider_user_id: {
-        provider: SOCIAL_PROVIDER_GOOGLE,
-        provider_user_id: profile.sub,
+        provider,
+        provider_user_id: profile.providerUserId,
       },
     },
     include: {
@@ -206,12 +328,12 @@ async function resolveGoogleUser(profile: GoogleUserInfo): Promise<SocialUserRes
     await prisma.oAuthAccount.create({
       data: {
         user_id: existingUser.id,
-        provider: SOCIAL_PROVIDER_GOOGLE,
-        provider_user_id: profile.sub,
+        provider,
+        provider_user_id: profile.providerUserId,
       },
     });
 
-    if (profile.email_verified && !existingUser.email_verified_at) {
+    if (profile.emailVerified && !existingUser.email_verified_at) {
       await prisma.users.update({
         where: { id: existingUser.id },
         data: { email_verified_at: new Date() },
@@ -225,7 +347,7 @@ async function resolveGoogleUser(profile: GoogleUserInfo): Promise<SocialUserRes
     };
   }
 
-  const username = await generateUniqueUsername(profile.email, profile.given_name || profile.name);
+  const username = await generateUniqueUsername(profile.email, profile.fallbackName);
   const passwordHash = await bcrypt.hash(randomBytes(32).toString("hex"), 10);
 
   const createdUser = await prisma.users.create({
@@ -234,11 +356,11 @@ async function resolveGoogleUser(profile: GoogleUserInfo): Promise<SocialUserRes
       username,
       password_hash: passwordHash,
       role: "user",
-      email_verified_at: profile.email_verified ? new Date() : null,
+      email_verified_at: profile.emailVerified ? new Date() : null,
       oauth_accounts: {
         create: {
-          provider: SOCIAL_PROVIDER_GOOGLE,
-          provider_user_id: profile.sub,
+          provider,
+          provider_user_id: profile.providerUserId,
         },
       },
     },
@@ -256,15 +378,11 @@ function redirectTarget(role: string | null): string {
   return role === "admin" ? "/admin/users" : "/profile";
 }
 
-export async function finishGoogleCallback(code: string): Promise<{
+async function finishSocialLogin(socialUser: SocialUserResult): Promise<{
   redirectTo: string;
   sessionToken: string;
   pendingTwoFactor?: boolean;
 }> {
-  const tokenResponse = await exchangeGoogleCode(code);
-  const profile = await fetchGoogleUserInfo(tokenResponse.access_token);
-  const socialUser = await resolveGoogleUser(profile);
-
   if (socialUser.requiresTwoFactor) {
     const pendingToken = createPendingTwoFactorToken();
     const pendingExpiresAt = getPendingTwoFactorExpiry();
@@ -306,6 +424,36 @@ export async function finishGoogleCallback(code: string): Promise<{
     redirectTo: `${getAppUrl().replace(/\/$/, "")}${redirectTarget(socialUser.role)}`,
     sessionToken: token,
   };
+}
+
+export async function finishSocialCallback(
+  provider: SupportedProvider,
+  code: string
+): Promise<{
+  redirectTo: string;
+  sessionToken: string;
+  pendingTwoFactor?: boolean;
+}> {
+  if (provider === SOCIAL_PROVIDER_GOOGLE) {
+    const tokenResponse = await exchangeGoogleCode(code);
+    const googleProfile = await fetchGoogleUserInfo(tokenResponse.access_token);
+    const socialUser = await resolveSocialUser(provider, {
+      providerUserId: googleProfile.sub,
+      email: googleProfile.email,
+      emailVerified: Boolean(googleProfile.email_verified),
+      fallbackName: googleProfile.given_name || googleProfile.name,
+    });
+    return finishSocialLogin(socialUser);
+  }
+
+  if (provider === SOCIAL_PROVIDER_GITHUB) {
+    const tokenResponse = await exchangeGitHubCode(code);
+    const gitHubProfile = await fetchGitHubProfile(tokenResponse.access_token || "");
+    const socialUser = await resolveSocialUser(provider, gitHubProfile);
+    return finishSocialLogin(socialUser);
+  }
+
+  throw new Error("Unsupported social provider");
 }
 
 export function applySocialLoginCookies(

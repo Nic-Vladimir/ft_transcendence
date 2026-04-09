@@ -61,7 +61,7 @@ This file summarizes the auth work already added on top of `main`.
 - `GET /api/auth/social/[provider]/callback`
   - resolves or creates the local account
   - starts a normal session or pending 2FA login
-- Google is the currently supported provider
+- Google and GitHub are currently supported providers
 
 ## Current Auth Surface
 

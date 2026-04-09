@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   applySocialLoginCookies,
   clearSocialStateCookie,
-  finishGoogleCallback,
+  finishSocialCallback,
   isSupportedSocialProvider,
 } from "@/lib/socialAuth";
 
@@ -35,7 +35,7 @@ export async function GET(
   }
 
   try {
-    const result = await finishGoogleCallback(code);
+    const result = await finishSocialCallback(provider, code);
     const res = NextResponse.redirect(result.redirectTo);
     applySocialLoginCookies(res, provider, result.sessionToken, result.pendingTwoFactor);
     return res;

@@ -62,7 +62,7 @@ export default function AuthPage() {
       setSuccessMessage(null);
     }
     if (socialStatus === 'oauth_failed' || socialStatus === 'error') {
-      setSocialError('Google login failed. Please try again.');
+      setSocialError('Social login failed. Please try again.');
     } else if (socialStatus === 'invalid_state') {
       setSocialError('Social login session expired. Please try again.');
     } else if (socialStatus === 'unsupported') {
@@ -231,6 +231,9 @@ export default function AuthPage() {
             <div className="text-center text-muted my-3">or</div>
             <a href="/api/auth/social/google/start" className="btn btn-outline-dark w-100">
               Continue with Google
+            </a>
+            <a href="/api/auth/social/github/start" className="btn btn-outline-dark w-100 mt-2">
+              Continue with GitHub
             </a>
           </>
         )}
