@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 
 export default function Dashboard() {
-  const [activeView, setActiveView] = useState("dashboard");
+  const [activeView, setActiveView] = useState("new_game");
 
   return (
     <div className="min-h-screen w-full bg-[#070b14] text-white overflow-hidden">
