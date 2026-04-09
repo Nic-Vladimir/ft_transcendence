@@ -1,22 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyEmailToken } from "@/lib/emailVerification";
 
+const APP_URL = process.env.APP_URL?.trim() || "https://localhost:8443";
+
+function loginRedirect(status: string) {
+  const url = new URL("/login", APP_URL);
+  url.searchParams.set("verification", status);
+  return NextResponse.redirect(url);
+}
+
 export async function GET(req: NextRequest) {
   try {
     const token = req.nextUrl.searchParams.get("token");
 
     if (!token) {
-      return NextResponse.json({ error: "token is required" }, { status: 400 });
+      return loginRedirect("invalid");
     }
 
-    const result = await verifyEmailToken(token);
-    return NextResponse.json(result);
+    await verifyEmailToken(token);
+    return loginRedirect("success");
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Internal server error";
-    const status = message.includes("token") ? 400 : 500;
-
     console.error(err);
-    return NextResponse.json({ error: message }, { status });
+
+    if (message.includes("already been used")) {
+      return loginRedirect("used");
+    }
+
+    if (message.includes("expired")) {
+      return loginRedirect("expired");
+    }
+
+    if (message.includes("token")) {
+      return loginRedirect("invalid");
+    }
+
+    return loginRedirect("error");
   }
 }

@@ -1,31 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { serialize } from "cookie";
-
-const SESSION_COOKIE = "session";
+import { clearAuthCookies, PENDING_2FA_COOKIE, SESSION_COOKIE } from "@/lib/session";
 
 export async function POST(req: NextRequest) {
   try {
-    const token = req.cookies.get(SESSION_COOKIE)?.value;
+    const tokens = [
+      req.cookies.get(SESSION_COOKIE)?.value,
+      req.cookies.get(PENDING_2FA_COOKIE)?.value,
+    ].filter(Boolean) as string[];
 
-    if (token) {
-      // Delete session from DB
-      await prisma.sessions.deleteMany({ where: { token } });
+    if (tokens.length > 0) {
+      await prisma.sessions.deleteMany({ where: { token: { in: tokens } } });
     }
 
-    // Clear the cookie
     const res = NextResponse.json({ message: "Logged out successfully" });
-    res.headers.append(
-      "Set-Cookie",
-      serialize(SESSION_COOKIE, "", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 0,
-      })
-    );
-
+    clearAuthCookies(res);
     return res;
   } catch (err) {
     console.error(err);

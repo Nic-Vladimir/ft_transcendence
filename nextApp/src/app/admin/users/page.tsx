@@ -19,6 +19,7 @@ import { useState } from 'react';
 export default function UsersPage() {
   const {
     users,
+    roles,
     loading,
     successMessage,
     setSuccessMessage,
@@ -92,6 +93,7 @@ export default function UsersPage() {
       </div>
 
       <UserModals
+        roles={roles}
         editingUser={editingUser}
         setEditingUser={setEditingUser}
         handleSaveEdit={handleSaveEdit}

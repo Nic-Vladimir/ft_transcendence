@@ -84,7 +84,143 @@ const swaggerJson = {
           }
         }
       }
-    },    
+    },
+    "/api/auth/roles": {
+      get: {
+        tags: ["Auth"],
+        summary: "Get available roles",
+        description: "Returns the list of assignable roles. Requires an active admin session.",
+        responses: {
+          "200": {
+            description: "Roles fetched successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "array",
+                  items: {
+                    type: "string",
+                    example: "admin"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            description: "Unauthorized"
+          },
+          "403": {
+            description: "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/auth/users/{id}/role": {
+      patch: {
+        tags: ["Auth"],
+        summary: "Update a user's role",
+        description: "Updates the role of a target user. Requires an active admin session.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  role: { type: "string", example: "admin" }
+                },
+                required: ["role"]
+              }
+            }
+          }
+        },
+        responses: {
+          "200": {
+            description: "Role updated successfully"
+          },
+          "400": {
+            description: "Invalid role or invalid user id"
+          },
+          "401": {
+            description: "Unauthorized"
+          },
+          "403": {
+            description: "Forbidden"
+          },
+          "404": {
+            description: "User not found"
+          }
+        }
+      }
+    },
+    "/api/auth/2fa/setup": {
+      post: {
+        tags: ["Auth"],
+        summary: "Create a 2FA secret",
+        description: "Creates or refreshes a TOTP secret for the authenticated user.",
+        responses: {
+          "200": { description: "2FA secret created successfully" },
+          "400": { description: "2FA is already enabled" },
+          "401": { description: "Unauthorized" }
+        }
+      }
+    },
+    "/api/auth/2fa/enable": {
+      post: {
+        tags: ["Auth"],
+        summary: "Enable 2FA",
+        description: "Enables TOTP-based 2FA after validating the current authenticator code.",
+        responses: {
+          "200": { description: "2FA enabled successfully" },
+          "400": { description: "2FA setup missing or already enabled" },
+          "401": { description: "Unauthorized or invalid code" }
+        }
+      }
+    },
+    "/api/auth/2fa/verify": {
+      post: {
+        tags: ["Auth"],
+        summary: "Verify a pending 2FA login",
+        description: "Finishes a login that is waiting for a TOTP code and upgrades it into a full session.",
+        responses: {
+          "200": { description: "2FA login verified successfully" },
+          "401": { description: "Verification expired or code invalid" }
+        }
+      }
+    },
+    "/api/auth/2fa/disable": {
+      post: {
+        tags: ["Auth"],
+        summary: "Disable 2FA",
+        description: "Disables TOTP-based 2FA after validating the current authenticator code.",
+        responses: {
+          "200": { description: "2FA disabled successfully" },
+          "400": { description: "2FA is not enabled" },
+          "401": { description: "Unauthorized or invalid code" }
+        }
+      }
+    },
+    "/api/auth/social/{provider}/start": {
+      get: {
+        tags: ["Auth"],
+        summary: "Start social login",
+        description: "Redirects the user to the provider authorization screen.",
+        responses: {
+          "307": { description: "Redirect to provider login" },
+          "400": { description: "Unsupported provider" }
+        }
+      }
+    },
+    "/api/auth/social/{provider}/callback": {
+      get: {
+        tags: ["Auth"],
+        summary: "Handle social login callback",
+        description: "Exchanges the OAuth code, resolves or creates the local account, and starts a session or pending 2FA login.",
+        responses: {
+          "307": { description: "Redirect back to the app" }
+        }
+      }
+    },
+    
     // 1. User Registration
     "/api/auth/register": {
       "post": {
@@ -462,4 +598,3 @@ const swaggerJson = {
 export async function GET() {
 	return NextResponse.json(swaggerJson);
 }
-
