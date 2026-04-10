@@ -19,6 +19,7 @@ export default function TriviaPage() {
   const [currentQuestion, setCurrentQuestion] = useState(1);
   const [secondsLeft, setSecondsLeft] = useState(20);
   const currentTrivia = trivia[currentQuestion - 1];
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
 
   useEffect(() => {
     if (currentQuestion > questions_count) return;
@@ -40,6 +41,10 @@ export default function TriviaPage() {
 
     return () => clearInterval(interval);
   }, [currentQuestion, questions_count]);
+
+  useEffect(() => {
+    setSelectedAnswer(null);
+  }, [currentQuestion]);
 
   return (
     <div className="h-screen w-full bg-[#070b14] text-white overflow-hidden">
@@ -80,11 +85,16 @@ export default function TriviaPage() {
 
                 {/* Answers */}
                 <div className="mt-auto grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {currentTrivia.answers.map((answer) => (
+                  {currentTrivia.answers.map((answer, index) => (
                     <button
                       key={answer}
-                      className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-left text-sm font-medium text-white/80 transition hover:bg-white/10 hover:text-white"
-                    >
+					  onClick={() => setSelectedAnswer(index)}
+                      className={`rounded-2xl border px-5 py-4 text-left text-sm font-medium transition" ${
+                        selectedAnswer === index
+						  ? "border-white-400 bg-white/20 text-white"
+						  : "border-white/10 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
+					  }`}
+					>
                       {answer}
                     </button>
                   ))}
