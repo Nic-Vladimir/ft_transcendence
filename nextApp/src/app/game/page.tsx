@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 
 export default function TriviaPage() {
   const players = ["Tom", "Kate", "Adam", "Steve"];
@@ -14,33 +15,34 @@ export default function TriviaPage() {
 		answers: ["Kolbenova 6", "Kolbenova 9", "Kolbenova 13", "Kolbenova 42"],
 	},
   ];
-  const questions_count = trivia.length;
+  const questionsCount = trivia.length;
 
   const [currentQuestion, setCurrentQuestion] = useState(1);
   const [secondsLeft, setSecondsLeft] = useState(20);
   const currentTrivia = trivia[currentQuestion - 1];
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [gameOver, setGameOver] = useState(false);
 
   useEffect(() => {
-    if (currentQuestion > questions_count) return;
+    if (gameOver) return;
 
     const interval = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev > 1) return prev - 1;
 
-        setCurrentQuestion((q) => {
-          if (q < questions_count) {
-            return q + 1;
-          }
-          return q;
-        });
+		if (currentQuestion < questionsCount) {
+			setCurrentQuestion((q) => q + 1);
+			setSelectedAnswer(null);
+			return 20;
+        };
 
-        return 20;
+		setGameOver(true);
+        return 0;
       });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [currentQuestion, questions_count]);
+  }, [currentQuestion, questionsCount, gameOver]);
 
   useEffect(() => {
     setSelectedAnswer(null);
@@ -56,52 +58,68 @@ export default function TriviaPage() {
 	    <main className="relative mx-auto flex h-full w-full max-w-7xl px-4 py-4">
   	      <div className="flex h-full w-full items-stretch gap-6">
             {/* Main game area */}
-			<section className="flex h-full flex-1 flex-col rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl overflow-hidden">
-		      <div className="mb-4 flex justify-center">
-				<div
+			{gameOver ? (
+			<div className="flex h-full flex-1 items-center justify-center rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+				<div className="text-center">
+				  <h1 className="text-4xl font-bold text-white">The End</h1>
+				  <p className="mt-4 text-white/70">
+					Thanks for playing.
+				  </p>
+				  <Link
+					href="/dashboard"
+					className="mt-8 inline-block rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white-400 transition hover:bg-white/10 hover:text-white-300"
+				  >
+					Return to dashboard
+				  </Link>
+				</div>
+			</div>
+			) : (
+			  <section className="flex h-full flex-1 flex-col rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl overflow-hidden">
+				<div className="mb-4 flex justify-center">
+				  <div
 					className={`px-8 py-3 text-5xl font-bold ${
-					secondsLeft > 10
-						? "text-white"
+					  secondsLeft > 10
+					  	? "text-white"
 						: secondsLeft > 5
 						? "text-yellow-400"
 						: "text-red-400"
 					}`}
-				>
+				  >
 					{secondsLeft}
+				  </div>
 				</div>
-			  </div>
-			  <div className="flex h-full flex-col justify-between">
-                {/* Question */}
-                <div className="flex flex-1 items-center justify-center">
-                  <div className="max-w-3xl text-center">
-                    <h1 className="text-3xl font-semibold leading-tight text-white md:text-5xl">
-                      {currentTrivia.question}
-                    </h1>
-                    <p className="mt-4 text-sm leading-7 text-slate-300/70 md:text-base">
-                      Choose the correct answer below.
-                    </p>
-                  </div>
-                </div>
+				<div className="flex h-full flex-col justify-between">
+				  {/* Question */}
+				  <div className="flex flex-1 items-center justify-center">
+					<div className="max-w-3xl text-center">
+						<h1 className="text-3xl font-semibold leading-tight text-white md:text-5xl">
+						{currentTrivia.question}
+						</h1>
+						<p className="mt-4 text-sm leading-7 text-slate-300/70 md:text-base">
+						Choose the correct answer below.
+						</p>
+					</div>
+				  </div>
 
-                {/* Answers */}
-                <div className="mt-auto grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {currentTrivia.answers.map((answer, index) => (
-                    <button
-                      key={answer}
-					  onClick={() => setSelectedAnswer(index)}
-                      className={`rounded-2xl border px-5 py-4 text-left text-sm font-medium transition" ${
-                        selectedAnswer === index
+				  {/* Answers */}
+				  <div className="mt-auto grid grid-cols-1 gap-4 md:grid-cols-2">
+				    {currentTrivia.answers.map((answer, index) => (
+					  <button
+					    key={answer}
+						onClick={() => setSelectedAnswer(index)}
+						className={`rounded-2xl border px-5 py-4 text-left text-sm font-medium transition" ${
+						  selectedAnswer === index
 						  ? "border-white-400 bg-white/20 text-white"
 						  : "border-white/10 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
 					  }`}
 					>
-                      {answer}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </section>
-
+					  {answer}
+				    </button>
+				   ))}
+				  </div>
+				</div>
+			  </section>
+		    )}
             {/*Sidebar */}
 			<aside className="flex h-full w-80 shrink-0 flex-col rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl">
               <div className="mb-6">
@@ -132,7 +150,7 @@ export default function TriviaPage() {
                   Question
                 </p>
                 <div className="mt-2 text-2xl font-semibold text-white">
-                  {currentQuestion}/{questions_count}
+                  {currentQuestion}/{questionsCount}
                 </div>
               </div>
             </aside>
