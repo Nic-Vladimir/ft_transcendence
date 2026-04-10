@@ -4,17 +4,21 @@ import React, { useEffect, useState } from "react";
 
 export default function TriviaPage() {
   const players = ["Tom", "Kate", "Adam", "Steve"];
-  const question = "When was 42 Prague established?";
-  const questions_count = 9;
-  const answers = [
-    "2021",
-    "2022",
-    "2023",
-    "2024",
+  const trivia = [
+	{
+		question: "When was 42 Prague established?",
+		answers: ["2021", "2022", "2023", "2024"],
+	},
+	{
+		question: "What is the address of 42 Prague?",
+		answers: ["Kolbenova 6", "Kolbenova 9", "Kolbenova 13", "Kolbenova 42"],
+	},
   ];
+  const questions_count = trivia.length;
 
   const [currentQuestion, setCurrentQuestion] = useState(1);
   const [secondsLeft, setSecondsLeft] = useState(20);
+  const currentTrivia = trivia[currentQuestion - 1];
 
   useEffect(() => {
     if (currentQuestion > questions_count) return;
@@ -66,7 +70,7 @@ export default function TriviaPage() {
                 <div className="flex flex-1 items-center justify-center">
                   <div className="max-w-3xl text-center">
                     <h1 className="text-3xl font-semibold leading-tight text-white md:text-5xl">
-                      {question}
+                      {currentTrivia.question}
                     </h1>
                     <p className="mt-4 text-sm leading-7 text-slate-300/70 md:text-base">
                       Choose the correct answer below.
@@ -76,7 +80,7 @@ export default function TriviaPage() {
 
                 {/* Answers */}
                 <div className="mt-auto grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {answers.map((answer) => (
+                  {currentTrivia.answers.map((answer) => (
                     <button
                       key={answer}
                       className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-left text-sm font-medium text-white/80 transition hover:bg-white/10 hover:text-white"
