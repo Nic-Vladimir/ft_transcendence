@@ -240,7 +240,7 @@ export default function AuthPage() {
 
                   <button
                     type="submit"
-                    className="btn btn-primary w-100"
+                    className="btn login-primary-btn w-100"
                     disabled={loading || (!isLogin && password !== confirmPassword)}
                   >
                     {loading ? <span className="spinner-border spinner-border-sm" /> : isLogin ? (twoFactorRequired ? 'Verify 2FA' : 'Login') : 'Register'}
