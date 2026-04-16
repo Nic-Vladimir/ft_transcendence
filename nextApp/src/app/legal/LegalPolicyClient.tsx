@@ -1,14 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Lock,
-  Scale,
-  ShieldAlert,
-  CircleUserRound,
-  Globe,
-} from "lucide-react";
+import { Lock, Scale, ShieldAlert, CircleUserRound, Globe } from "lucide-react";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "@/styles/admin.css";
 
 const chips = [
   "Email address",
@@ -31,9 +27,13 @@ export default function LegalPolicyClient({
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
 
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab);
-    window.history.replaceState(null, "", `/legal?tab=${tab}`);
+    router.replace(`/legal?tab=${tab}`);
   };
 
   return (
