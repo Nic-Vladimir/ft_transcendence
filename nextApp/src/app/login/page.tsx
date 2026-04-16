@@ -106,167 +106,191 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="container d-flex justify-content-center align-items-center vh-100">
-      <div className="card p-4 shadow" style={{ width: '360px' }}>
-        <h3 className="mb-3 text-center">{isLogin ? 'Login' : 'Register'}</h3>
+    <div className="dashboard-shell min-vh-100 w-100 text-white overflow-hidden">
+      <div className="position-relative min-vh-100">
+        <div className="dashboard-bg-1 position-absolute top-0 start-0 end-0 bottom-0" />
+        <div className="dashboard-bg-2 position-absolute top-0 start-0 end-0 bottom-0" />
+        <div className="dashboard-bg-3 position-absolute top-0 start-0 end-0 bottom-0" />
 
-        {errorMessage && <div className="alert alert-danger py-2">{errorMessage}</div>}
-        {socialError && <div className="alert alert-danger py-2">{socialError}</div>}
-        {!isLogin && password && confirmPassword && password !== confirmPassword && (
-          <div className="alert alert-danger py-2">Passwords do not match.</div>
-        )}
-        {isLogin && pendingVerificationEmail && (
-          <div className="alert alert-warning py-2">
-            <div className="mb-2">Your email is not verified yet.</div>
-            <button
-              type="button"
-              className="btn btn-sm btn-outline-warning"
-              disabled={loading}
-              onClick={() => resendVerification(pendingVerificationEmail)}
+        <main className="position-relative mx-auto d-flex min-vh-100 w-100 dashboard-max-width px-3 py-3 align-items-center justify-content-center">
+          <div className="login-layout d-flex w-100 gap-4 align-items-center justify-content-center">
+            <div className="login-glass-soft d-flex flex-column justify-content-center p-4 p-lg-5"
+                 style={{ maxWidth: '380px', width: '100%' }}
             >
-              Resend verification email
-            </button>
-          </div>
-        )}
-        {successMessage && (
-          <div className="alert alert-success py-2">
-            {successMessage}
-            <button className="btn-close float-end" onClick={() => setSuccessMessage(null)} />
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          {!isLogin && (
-            <div className="mb-3">
-              <label className="form-label">Username</label>
-              <input
-                type="text"
-                className="form-control"
-                value={username}
-                onChange={e => setUsername(e.target.value)}
-                required
-              />
+              <h1 className="login-title mb-3">TRIVIAAPP</h1>
+              <p className="login-description">
+                Challenge your friends, test your knowledge, and compete in real-time trivia games.
+                Create games, join sessions, and see who comes out on top.
+              </p>
             </div>
-          )}
+            
+            <div className="login-glass-strong p-4 p-lg-5" style={{ width: '100%', maxWidth: '420px' }}>
+              <h3 className="mb-3 text-center text-white">
+                {isLogin ? 'Login' : 'Register'}
+              </h3>
 
-          <div className="mb-3">
-            <label className="form-label">Email</label>
-            <input
-              type="email"
-              className="form-control"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-            />
-          </div>
+              {errorMessage && <div className="alert alert-danger py-2">{errorMessage}</div>}
+              {socialError && <div className="alert alert-danger py-2">{socialError}</div>}
+              {!isLogin && password && confirmPassword && password !== confirmPassword && (
+                <div className="alert alert-danger py-2">Passwords do not match.</div>
+              )}
+              {isLogin && pendingVerificationEmail && (
+                <div className="alert alert-warning py-2">
+                  <div className="mb-2">Your email is not verified yet.</div>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-warning"
+                    disabled={loading}
+                    onClick={() => resendVerification(pendingVerificationEmail)}
+                  >
+                    Resend verification email
+                  </button>
+                </div>
+              )}
+              {successMessage && (
+                <div className="alert alert-success py-2">
+                  {successMessage}
+                  <button className="btn-close float-end" onClick={() => setSuccessMessage(null)} />
+                </div>
+              )}
 
-          {isLogin && twoFactorRequired ? (
-            <div className="mb-3">
-              <label className="form-label">2FA code</label>
-              <input
-                type="text"
-                className="form-control"
-                value={twoFactorCode}
-                onChange={e => setTwoFactorCode(e.target.value)}
-                placeholder="123456"
-                inputMode="numeric"
-                required
-              />
-            </div>
-          ) : (
-            <div className="mb-3">
-              <label className="form-label">Password</label>
-              <div className="input-group">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  className="form-control"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  required
-                />
+              <form onSubmit={handleSubmit}>
+                {!isLogin && (
+                  <div className="mb-3">
+                    <label className="form-label">Username</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={username}
+                      onChange={e => setUsername(e.target.value)}
+                      required
+                    />
+                  </div>
+                )}
+
+                <div className="mb-3">
+                  <label className="form-label">Email</label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+
+                {isLogin && twoFactorRequired ? (
+                  <div className="mb-3">
+                    <label className="form-label">2FA code</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={twoFactorCode}
+                      onChange={e => setTwoFactorCode(e.target.value)}
+                      placeholder="123456"
+                      inputMode="numeric"
+                      required
+                    />
+                  </div>
+                ) : (
+                  <div className="mb-3">
+                    <label className="form-label">Password</label>
+                    <div className="input-group">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        className="form-control"
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={() => setShowPassword(prev => !prev)}
+                      >
+                        {showPassword ? 'Hide' : 'Show'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {!isLogin && (
+                  <div className="mb-3">
+                    <label className="form-label">Confirm password</label>
+                    <div className="input-group">
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        className="form-control"
+                        value={confirmPassword}
+                        onChange={e => setConfirmPassword(e.target.value)}
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={() => setShowConfirmPassword(prev => !prev)}
+                      >
+                        {showConfirmPassword ? 'Hide' : 'Show'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <button
-                  type="button"
-                  className="btn btn-outline-secondary"
-                  onClick={() => setShowPassword(prev => !prev)}
+                  type="submit"
+                  className="btn btn-primary w-100"
+                  disabled={loading || (!isLogin && password !== confirmPassword)}
                 >
-                  {showPassword ? 'Hide' : 'Show'}
+                  {loading ? <span className="spinner-border spinner-border-sm" /> : isLogin ? (twoFactorRequired ? 'Verify 2FA' : 'Login') : 'Register'}
                 </button>
+              </form>
+
+              {isLogin && !twoFactorRequired && (
+                <>
+                  <div className="text-center text-muted my-3">or</div>
+                  <a href="/api/auth/social/google/start"
+                    className="btn dashboard-link-btn w-100 text-center">
+                      Continue with Google
+                  </a>
+                  <a href="/api/auth/social/github/start"
+                    className="btn dashboard-link-btn w-100 mt-2 text-center">
+                      Continue with GitHub
+                  </a>
+                </>
+              )}
+
+              <div className="mt-3 text-center">
+                {isLogin && !twoFactorRequired && (
+                  <div className="mb-2">
+                    <a href="/reset-password" className="btn btn-link p-0">
+                      Forgot password?
+                    </a>
+                  </div>
+                )}
+                {isLogin && twoFactorRequired && (
+                  <button
+                    className="btn btn-link"
+                    onClick={() => {
+                      window.location.reload();
+                    }}
+                    disabled={loading}
+                  >
+                    Back to login
+                  </button>
+                )}
+                {!twoFactorRequired && (
+                <button
+                  className="btn btn-link"
+                  onClick={() => setIsLogin(!isLogin)}
+                  disabled={loading}
+                >
+                  {isLogin ? "Don't have an account? Register" : 'Already have an account? Login'}
+                </button>
+                )}
               </div>
             </div>
-          )}
-
-          {!isLogin && (
-            <div className="mb-3">
-              <label className="form-label">Confirm password</label>
-              <div className="input-group">
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  className="form-control"
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  required
-                />
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary"
-                  onClick={() => setShowConfirmPassword(prev => !prev)}
-                >
-                  {showConfirmPassword ? 'Hide' : 'Show'}
-                </button>
-              </div>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            className="btn btn-primary w-100"
-            disabled={loading || (!isLogin && password !== confirmPassword)}
-          >
-            {loading ? <span className="spinner-border spinner-border-sm" /> : isLogin ? (twoFactorRequired ? 'Verify 2FA' : 'Login') : 'Register'}
-          </button>
-        </form>
-
-        {isLogin && !twoFactorRequired && (
-          <>
-            <div className="text-center text-muted my-3">or</div>
-            <a href="/api/auth/social/google/start" className="btn btn-outline-dark w-100">
-              Continue with Google
-            </a>
-            <a href="/api/auth/social/github/start" className="btn btn-outline-dark w-100 mt-2">
-              Continue with GitHub
-            </a>
-          </>
-        )}
-
-        <div className="mt-3 text-center">
-          {isLogin && !twoFactorRequired && (
-            <div className="mb-2">
-              <a href="/reset-password" className="btn btn-link p-0">
-                Forgot password?
-              </a>
-            </div>
-          )}
-          {isLogin && twoFactorRequired && (
-            <button
-              className="btn btn-link"
-              onClick={() => {
-                window.location.reload();
-              }}
-              disabled={loading}
-            >
-              Back to login
-            </button>
-          )}
-          {!twoFactorRequired && (
-          <button
-            className="btn btn-link"
-            onClick={() => setIsLogin(!isLogin)}
-            disabled={loading}
-          >
-            {isLogin ? "Don't have an account? Register" : 'Already have an account? Login'}
-          </button>
-          )}
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   );
