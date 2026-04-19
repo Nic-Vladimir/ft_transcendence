@@ -85,90 +85,99 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="container d-flex justify-content-center align-items-center vh-100">
-      <div className="card p-4 shadow" style={{ width: '420px' }}>
-        <h3 className="mb-3 text-center">{token ? 'Set a new password' : 'Forgot password'}</h3>
+    <div className="dashboard-shell min-vh-100 w-100 text-white overflow-hidden">
+      <div className="position-relative min-vh-100">
+        <div className="dashboard-bg-1 position-absolute top-0 start-0 end-0 bottom-0" />
+        <div className="dashboard-bg-2 position-absolute top-0 start-0 end-0 bottom-0" />
+        <div className="dashboard-bg-3 position-absolute top-0 start-0 end-0 bottom-0" />
 
-        {errorMessage && <div className="alert alert-danger py-2">{errorMessage}</div>}
-        {successMessage && <div className="alert alert-success py-2">{successMessage}</div>}
-        {token && password && confirmPassword && password !== confirmPassword && (
-          <div className="alert alert-danger py-2">Passwords do not match.</div>
-        )}
+        <main className="position-relative mx-auto d-flex flex-column min-vh-100 w-100 dashboard-max-width px-3 py-3">
+          <div className="flex-grow-1 d-flex align-items-center justify-content-center">
+            <div className="login-glass-strong p-4 p-lg-5" style={{ width: '100%', maxWidth: '420px' }}>
+              <h3 className="mb-3 text-center">{token ? 'Set a new password' : 'Forgot password'}</h3>
+              {errorMessage && <div className="alert alert-danger py-2">{errorMessage}</div>}
+              {successMessage && <div className="alert alert-success py-2">{successMessage}</div>}
+              {token && password && confirmPassword && password !== confirmPassword && (
+                <div className="alert alert-danger py-2">Passwords do not match.</div>
+              )}
 
-        {token ? (
-          <form onSubmit={handleResetPassword}>
-            <div className="mb-3">
-              <label className="form-label">New password</label>
-              <div className="input-group">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  className="form-control"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  required
-                />
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary"
-                  onClick={() => setShowPassword(prev => !prev)}
-                >
-                  {showPassword ? 'Hide' : 'Show'}
-                </button>
+              {token ? (
+                <form onSubmit={handleResetPassword}>
+                  <div className="mb-3">
+                    <label className="form-label">New password</label>
+                    <div className="input-group">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        className="form-control"
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="login-input-btn"
+                        onClick={() => setShowPassword(prev => !prev)}
+                      >
+                        {showPassword ? 'Hide' : 'Show'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Confirm new password</label>
+                    <div className="input-group">
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        className="form-control"
+                        value={confirmPassword}
+                        onChange={e => setConfirmPassword(e.target.value)}
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="login-input-btn"
+                        onClick={() => setShowConfirmPassword(prev => !prev)}
+                      >
+                        {showConfirmPassword ? 'Hide' : 'Show'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn login-primary-btn w-100"
+                    disabled={loading || password !== confirmPassword}
+                  >
+                    {loading ? <span className="spinner-border spinner-border-sm" /> : 'Reset password'}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handleForgotPassword}>
+                  <div className="mb-3">
+                    <label className="form-label">Email</label>
+                    <input
+                      type="email"
+                      className="form-control"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <button type="submit" className="btn login-primary-btn w-100" disabled={loading}>
+                    {loading ? <span className="spinner-border spinner-border-sm" /> : 'Send reset link'}
+                  </button>
+                </form>
+              )}
+
+              <div className="mt-3 text-center">
+                <Link href="/login" className="login-footer-link">
+                  Back to login
+                </Link>
               </div>
             </div>
-
-            <div className="mb-3">
-              <label className="form-label">Confirm new password</label>
-              <div className="input-group">
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  className="form-control"
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  required
-                />
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary"
-                  onClick={() => setShowConfirmPassword(prev => !prev)}
-                >
-                  {showConfirmPassword ? 'Hide' : 'Show'}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="btn btn-primary w-100"
-              disabled={loading || password !== confirmPassword}
-            >
-              {loading ? <span className="spinner-border spinner-border-sm" /> : 'Reset password'}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleForgotPassword}>
-            <div className="mb-3">
-              <label className="form-label">Email</label>
-              <input
-                type="email"
-                className="form-control"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-              />
-            </div>
-
-            <button type="submit" className="btn btn-primary w-100" disabled={loading}>
-              {loading ? <span className="spinner-border spinner-border-sm" /> : 'Send reset link'}
-            </button>
-          </form>
-        )}
-
-        <div className="mt-3 text-center">
-          <Link href="/login" className="btn btn-link">
-            Back to login
-          </Link>
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   );
