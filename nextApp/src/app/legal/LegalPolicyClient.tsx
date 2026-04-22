@@ -1,14 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Lock,
-  Scale,
-  ShieldAlert,
-  CircleUserRound,
-  Globe,
-} from "lucide-react";
+import { Lock, Scale, ShieldAlert, CircleUserRound, Globe } from "lucide-react";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "@/styles/admin.css";
 
 const chips = [
   "Email address",
@@ -31,42 +27,43 @@ export default function LegalPolicyClient({
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
 
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab);
-    window.history.replaceState(null, "", `/legal?tab=${tab}`);
+    router.replace(`/legal?tab=${tab}`);
   };
 
   return (
-    <div className="legal-shell position-relative min-vh-100 text-white">
-      <div className="legal-bg-1 position-absolute top-0 start-0 end-0 bottom-0" />
-      <div className="legal-bg-2 position-absolute top-0 start-0 end-0 bottom-0" />
-      <div className="legal-bg-3 position-absolute top-0 start-0 end-0 bottom-0" />
+      <>
+        <div className="w-100 d-flex justify-content-center mt-2">
+          <div className="btn-group legal-tab-group mt-2">
+            <button
+              type="button"
+              onClick={() => handleTabChange("privacy")}
+              className={`btn rounded-pill px-4 py-2 legal-tab-btn ${
+                activeTab === "privacy"
+                ? "legal-tab-active"
+                : ""
+              }`}
+            >
+              Privacy Policy
+            </button>
 
-      <main className="position-relative mx-auto d-flex flex-column align-items-center px-3 px-sm-4 py-4 py-sm-5 legal-max-width">
-        <div className="btn-group legal-tab-group mt-2" role="group" aria-label="Legal tabs">
-          <button
-            type="button"
-            onClick={() => handleTabChange("privacy")}
-            className={`btn rounded-pill px-4 py-2 legal-tab-btn ${
-              activeTab === "privacy"
-              ? "legal-tab-active"
-              : ""
-            }`}
-          >
-            Privacy Policy
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleTabChange("terms")}
-            className={`btn rounded-pill px-4 py-2 legal-tab-btn ${
-              activeTab === "terms"
-              ? "legal-tab-active"
-              : ""
-            }`}
-          >
-            Terms of Use
-          </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange("terms")}
+              className={`btn rounded-pill px-4 py-2 legal-tab-btn ${
+                activeTab === "terms"
+                ? "legal-tab-active"
+                : ""
+              }`}
+            >
+              Terms of Use
+            </button>
+          </div>
         </div>
 
         {activeTab === "privacy" ? (
@@ -87,7 +84,7 @@ export default function LegalPolicyClient({
               </p>
             </div>
 
-            <section className="mt-4 mt-sm-5 w-100 legal-card legal-card-soft p-4 p-sm-5">
+            <section className="mt-4 mt-sm-5 legal-card legal-card-soft legal-panel p-4 p-sm-5">
               <div className="d-flex align-items-start gap-3 text-white-75">
                 <div className="d-flex align-items-center justify-content-center rounded-circle legal-icon-wrap">
                   <Lock size={16} />
@@ -99,7 +96,7 @@ export default function LegalPolicyClient({
               </div>
             </section>
 
-            <section className="mt-4 w-100 legal-card legal-card-gradient p-4 p-sm-5 p-lg-5">
+            <section className="mt-4 legal-card legal-card-gradient legal-panel p-4 p-sm-5 p-lg-5">
               <div className="d-flex align-items-center gap-2 text-uppercase legal-section-tag">
                 <span>01</span>
                 <span>-</span>
@@ -198,7 +195,7 @@ export default function LegalPolicyClient({
               </p>
             </div>
 
-            <section className="mt-4 mt-sm-5 mx-auto w-100 legal-card p-4 p-sm-5">
+            <section className="mt-4 mt-sm-5 mx-auto legal-card legal-panel p-4 p-sm-5">
               <div className="legal-terms">
                 <div>
                   <h2 className="h5 fw-semibold text-white">1. Acceptance of Terms</h2>
@@ -246,7 +243,6 @@ export default function LegalPolicyClient({
             </section>
           </>
         )}
-      </main>
-    </div>
+    </>
   );
 }
