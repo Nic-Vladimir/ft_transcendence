@@ -4,7 +4,7 @@ import { getSessionByWs } from "../services/sessionManager.js";
 import { send } from "../services/roomManager.js";
 import { handleIdentify } from "./session.js";
 import { handleRoomCreate, handleRoomJoin, handleRoomLeave, handleRoomList } from "./room.js";
-// import { handleReady, handleAnswer } from "./game.js";
+import { handleReady, handleAnswer } from "./game.js";
 
 function err(ws: WebSocket, code: string, message: string, requestId?: string): void {
   send(ws, { type: "error", requestId, ts: Date.now(), payload: { code, message } });
@@ -41,10 +41,10 @@ export function handleMessage(ws: WebSocket, raw: string): void {
       return handleRoomLeave(ws, session.userId, requestId);
     case "room:list":
       return handleRoomList(ws, requestId);
-    // case "game:ready":
-    //   return handleReady(ws, session.userId, requestId);
-    // case "game:answer":
-    //   return handleAnswer(ws, session.userId, payload as AnswerPayload, requestId);
+    case "game:ready":
+      return handleReady(ws, session.userId, requestId);
+    case "game:answer":
+      return handleAnswer(ws, session.userId, payload as AnswerPayload, requestId);
     default:
       err(ws, "UNKNOWN_TYPE", `Unknown message type: ${type}`, requestId);
   }
