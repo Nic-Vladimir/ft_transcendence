@@ -2,6 +2,7 @@
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useState, useEffect } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useProfile } from '@/hooks/useProfile';
 import '@/styles/admin.css';
 
@@ -169,13 +170,18 @@ export default function ProfilePage() {
 
           {twoFactorSecret && (
             <div className="mb-3">
-              <div className="small text-muted mb-2">Authenticator secret</div>
-              <div className="form-control mb-2" style={{ fontFamily: 'monospace' }}>{twoFactorSecret}</div>
               {twoFactorUrl && (
-                <div className="small text-muted mb-2" style={{ wordBreak: 'break-all' }}>
-                  {twoFactorUrl}
+                <div className="text-center mb-3">
+                  <div className="small text-muted mb-2">Scan with your authenticator app</div>
+                  <div className="d-inline-block bg-white p-3 rounded">
+                    <QRCodeSVG value={twoFactorUrl} size={180} />
+                  </div>
                 </div>
               )}
+              <div className="small text-muted mb-2">Manual setup key</div>
+              <div className="form-control mb-2" style={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                {twoFactorSecret}
+              </div>
             </div>
           )}
 
