@@ -10,6 +10,11 @@ localhost:443 {
         reverse_proxy frontend:3000
     }
 
+    # Kibana → Elastic Stack UI
+    handle /kibana* {
+        reverse_proxy kibana:5601
+    }
+
     # Static fallback only for root /
     handle / {
         root * /srv

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import * as bcrypt from "bcryptjs";
+import { logger } from "@/lib/logger";
 import {
   appendPendingTwoFactorCookie,
   appendSessionCookie,
@@ -12,6 +13,7 @@ import {
   PENDING_2FA_COOKIE,
   SESSION_COOKIE,
 } from "@/lib/session";
+
 
 // ----------------- Rate limiter -----------------
 type RateEntry = { count: number; resetAt: number };
@@ -49,6 +51,17 @@ export async function POST(req: NextRequest) {
     const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
 
     if (!normalizedEmail || !password) {
+      logger.info({
+        type: "request",
+        //requestId,
+        path: req.url,
+        method: req.method,
+        email,
+        ip,
+        status: 400,
+        //duration: Date.now() - start,
+        error: "missing_fields",
+      });
       return NextResponse.json({ error: "email and password are required" }, { status: 400 });
     }
 
@@ -59,8 +72,20 @@ export async function POST(req: NextRequest) {
 
     // Find user
     const user = await prisma.users.findUnique({ where: { email: normalizedEmail } });
-    if (!user) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-
+    if (!user) {
+      logger.info({
+        type: "request",
+        //requestId,
+        path: req.url,
+        method: req.method,
+        email,
+        ip,
+        status: 401,
+        //duration: Date.now() - start,
+        error: "user_not_found",
+      });
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    }
     // Check password
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
