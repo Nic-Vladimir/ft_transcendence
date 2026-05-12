@@ -4,8 +4,8 @@ export interface Question {
   // answers[0] is ALWAYS the correct answer (randomize display order on the client)
   // TODO: Check with team if this is a good idea
   answers: [string, string, string, string];
-  comment:
-  taunt:
+  comment: string;
+  taunt: string;
 }
 
 export interface Pack {

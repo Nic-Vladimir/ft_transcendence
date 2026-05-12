@@ -1,15 +1,13 @@
 import fs from "fs";
 import path from "path";
 import chokidar from "chokidar";
+import type { FSWatcher } from "chokidar";
 import type { Pack, PackSummary } from "../types/pack.js";
 
-let watcher: chokidar.FSWatcher | null = null;
+let watcher: FSWatcher | null = null;
 let absoluteDir: string | null = null;
 
-// In-memory store: pack id → Pack
 const packsById = new Map<string, Pack>();
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function summarise(pack: Pack): PackSummary {
   return {
@@ -93,8 +91,6 @@ export function getPackSummaries(): PackSummary[] {
   return getAllPacks().map(summarise);
 }
 
-// ─── Initialisation ───────────────────────────────────────────────────────────
-
 /**
  * Loads all JSON files from packsDir and starts a file watcher.
  * Call once at server startup.
@@ -127,7 +123,7 @@ export function initPackLoader(packsDir: string): void {
 }
 
 export async function closePackLoader(): Promise<void> {
-	if (watcher) {
+	if (watcher && absoluteDir) {
 		await watcher.unwatch(absoluteDir);
 		await watcher.close();
 		watcher = null;
