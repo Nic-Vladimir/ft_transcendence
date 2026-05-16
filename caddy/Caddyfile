@@ -6,14 +6,13 @@ localhost:443 {
     tls internal
     log
 
-    handle {
+	handle /ws/* {
+			uri strip_prefix /ws
+			reverse_proxy trivia-ws:3000
+		}
+
+    handle /* {
         reverse_proxy frontend:3000
     }
 
-    # Static fallback only for root /
-    handle / {
-        root * /srv
-        file_server
-        try_files {path} /index.html
-    }
 }
