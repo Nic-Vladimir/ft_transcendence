@@ -1,17 +1,44 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useWS } from "@/context/WSContext";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "@/styles/admin.css";
 
-export default function TriviaPage() {
-  const ws = useWS();
+type RoomPlayer = {
+  userId: string;
+  displayName: string;
+  score: number;
+  isSpectator: boolean;
+  isReady: boolean;
+};
 
+type Room = {
+  code: string;
+  isPublic: boolean;
+  packId: string;
+  maxPlayers: number;
+  state: string;
+  players: RoomPlayer[];
+};
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="text-white p-4">Loading...</div>}>
+      <TriviaPage />
+    </Suspense>
+  );
+}
+
+function TriviaPage() {
+  const ws = useWS();
+  const searchParams = useSearchParams();
+  const roomCode = searchParams.get("room");
+
+  const [room, setRoom] = useState<Room | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
-  const [readyPlayers, setReadyPlayers] = useState<string[]>([]);
-  const players = ["Tom", "Kate", "Adam", "Steve"];
   const trivia = [
     {
       question: "When was 42 Prague established?",
@@ -30,6 +57,49 @@ export default function TriviaPage() {
   const [gameOver, setGameOver] = useState(false);
 
   const currentTrivia = trivia[currentQuestion - 1];
+
+  useEffect(() => {
+    if (!ws || !roomCode) return;
+
+    const requestId = crypto.randomUUID();
+
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        const msg = JSON.parse(event.data);
+
+        if (
+          (msg.type === "room:joined" || msg.type === "room:updated") &&
+          (msg.requestId === requestId || msg.payload?.code === roomCode)
+        ) {
+          setRoom(msg.payload?.room ?? msg.payload);
+        }
+      } catch {
+      }
+    };
+
+    const joinRoom = () => {
+      ws.send(
+        JSON.stringify({
+          type: "room:join",
+          requestId,
+          ts: Date.now(),
+          payload: { code: roomCode },
+        })
+      );
+    };
+
+    ws.addEventListener("message", handleMessage);
+
+    if (ws.readyState === WebSocket.OPEN) {
+      joinRoom();
+    } else {
+      ws.addEventListener("open", joinRoom, { once: true });
+    }
+
+    return () => {
+      ws.removeEventListener("message", handleMessage);
+    };
+  }, [ws, roomCode]);
 
   useEffect(() => {
     if (!gameStarted || gameOver) return;
@@ -69,31 +139,26 @@ export default function TriviaPage() {
               <h1 className="mb-4">Waiting Room</h1>
 
               <div className="w-100" style={{ maxWidth: "500px" }}>
-                {players.map((player) => {
-                  const isReady = readyPlayers.includes(player);
+                {room?.players.map((player) => (
+                  <div
+                    key={player.userId}
+                    className="d-flex justify-content-between align-items-center mb-3"
+                  >
+                    <span>{player.displayName}</span>
 
-                  return (
-                    <div
-                      key={player}
-                      className="d-flex justify-content-between align-items-center mb-3"
-                    >
-                      <span>{player}</span>
-
-                      <span className={isReady ? "text-success" : "text-white-50"}>
-                        {isReady ? "Ready" : "Not ready"}
-                      </span>
-                    </div>
-                  );
-                })}
+                    <span className={player.isReady ? "text-success" : "text-white-50"}>
+                      {player.isReady ? "Ready" : "Not ready"}
+                    </span>
+                  </div>
+                ))}
               </div>
 
               <p className="mt-4 text-white-50">
-                {readyPlayers.length}/{players.length} players ready
+                {room?.players.filter((p) => p.isReady).length ?? 0}/{room?.players.length ?? 0} players ready
               </p>
               <div className="mt-4">
                 <button
                   className="btn btn-primary w-100"
-//                  disabled={readyPlayers.length !== players.length}
                   onClick={() => setGameStarted(true)}
                 >
                   Start Game
@@ -166,13 +231,16 @@ export default function TriviaPage() {
                 </div>
 
                 <div className="d-flex flex-column gap-3 flex-grow-1">
-                  {players.map((player, index) => (
-                    <div key={player} className="game-player-row">
+                  {room?.players.map((player, index) => (
+                    <div key={player.userId} className="game-player-row">
                       <div className="d-flex align-items-center gap-3">
                         <div className="game-player-badge">{index + 1}</div>
-                        <span className="game-player-name">{player}</span>
+                        <span className="game-player-name">{player.displayName}</span>
                       </div>
-                      <span className="game-player-status">Ready</span>
+
+                      <span className="game-player-status">
+                        {player.isReady ? "Ready" : "Not ready"}
+                      </span>
                     </div>
                   ))}
                 </div>
