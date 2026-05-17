@@ -82,7 +82,7 @@ function TriviaPage() {
         JSON.stringify({
           type: "room:join",
           requestId,
-          ts: Date.now(),
+          ts: 1,
           payload: { code: roomCode },
         })
       );
