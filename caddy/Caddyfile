@@ -6,13 +6,18 @@ localhost:443 {
     tls internal
     log
 
-	handle /ws/* {
-			uri strip_prefix /ws
-			reverse_proxy trivia-ws:3000
-		}
-
-    handle /* {
-        reverse_proxy frontend:3000
+    @ws path /ws
+    handle @ws {
+        reverse_proxy trivia-ws:3000
     }
 
+    @packs path /ws/packs
+    handle @packs {
+        uri strip_prefix /ws
+        reverse_proxy trivia-ws:3000
+    }
+
+    handle {
+        reverse_proxy frontend:3000
+    }
 }
