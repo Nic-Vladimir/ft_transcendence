@@ -6,7 +6,8 @@ localhost:443 {
     tls internal
     log
 
-	handle /ws/* {
+	@websocket path /ws /ws/*
+	handle @websocket {
 			uri strip_prefix /ws
 			reverse_proxy trivia-ws:3000
 		}

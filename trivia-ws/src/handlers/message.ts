@@ -1,8 +1,7 @@
 import type { WebSocket } from "ws";
-import type { ClientMessage, RoomCreatePayload, RoomJoinPayload, IdentifyPayload, AnswerPayload } from "../types/message.js";
+import type { ClientMessage, RoomCreatePayload, RoomJoinPayload, AnswerPayload } from "../types/message.js";
 import { getSessionByWs } from "../services/sessionManager.js";
 import { send } from "../services/roomManager.js";
-import { handleIdentify } from "./session.js";
 import { handleRoomCreate, handleRoomJoin, handleRoomLeave, handleRoomList } from "./room.js";
 import { handleReady, handleAnswer } from "./game.js";
 
@@ -10,7 +9,7 @@ function err(ws: WebSocket, code: string, message: string, requestId?: string): 
   send(ws, { type: "error", requestId, ts: Date.now(), payload: { code, message } });
 }
 
-export function handleMessage(ws: WebSocket, raw: string): void {
+export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
   let msg: ClientMessage;
 
   try {
@@ -22,13 +21,9 @@ export function handleMessage(ws: WebSocket, raw: string): void {
 
   const { type, requestId, payload } = msg;
 
-  if (type === "session:identify") {
-    return handleIdentify(ws, payload as IdentifyPayload, requestId);
-  }
-
   const session = getSessionByWs(ws);
   if (!session) {
-    err(ws, "NOT_IDENTIFIED", "Send session:identify first", requestId);
+    err(ws, "NOT_AUTHENTICATED", "WebSocket connection is not authenticated", requestId);
     return;
   }
 
