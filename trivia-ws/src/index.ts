@@ -3,6 +3,8 @@ import { WebSocketServer } from "ws";
 import { config } from "./config/index.js";
 import { initPackLoader, closePackLoader } from "./services/packLoader.js";
 import { startIdleCleanup } from "./services/roomManager.js";
+import { authenticateWebSocket, closeAuthDb } from "./services/authDb.js";
+import { upsertSession } from "./services/sessionManager.js";
 import { handleHttpRequest } from "./router.js";
 import { handleMessage, handleDisconnect } from "./handlers/message.js";
 
@@ -13,12 +15,47 @@ const server = http.createServer(handleHttpRequest);
 const wss = new WebSocketServer({ server });
 
 
-wss.on("connection", (ws) => {
-  console.log("[ws] Client connected");
+wss.on("connection", async (ws, req) => {
+  const pendingMessages: string[] = [];
+  let authenticated = false;
 
-  ws.on("message", (raw) => handleMessage(ws, raw.toString()));
+  ws.on("message", (raw) => {
+    const message = raw.toString();
+
+    if (!authenticated) {
+      pendingMessages.push(message);
+      return;
+    }
+
+    handleMessage(ws, message).catch((err: unknown) => {
+      console.error("[ws] Message handler failed:", err);
+    });
+  });
   ws.on("close", () => handleDisconnect(ws));
   ws.on("error", (err) => console.error("[ws] Socket error:", err));
+
+  try {
+    const user = await authenticateWebSocket(req);
+    if (!user) {
+      console.log("[ws] Rejected unauthorized connection");
+      ws.close(1008, "Unauthorized");
+      return;
+    }
+
+    const { reconnected } = upsertSession(user.id, user.username, ws);
+    authenticated = true;
+    console.log(`[ws] ${reconnected ? "Reconnected" : "Connected"}: ${user.username} (${user.id})`);
+  } catch (error: unknown) {
+    console.error("[ws] Authentication failed:", error);
+    ws.close(1011, "Authentication failed");
+    return;
+  }
+
+  for (const message of pendingMessages.splice(0)) {
+    handleMessage(ws, message).catch((err: unknown) => {
+      console.error("[ws] Message handler failed:", err);
+    });
+  }
 });
 
 server.listen(config.port, () => {
@@ -33,6 +70,7 @@ server.listen(config.port, () => {
 async function shutdown(signal: string) {
   console.log(`\n[server] ${signal} received — shutting down`);
   await closePackLoader();
+  await closeAuthDb();
   wss.close(() => {
     server.close(() => {
       console.log("[server] Closed");

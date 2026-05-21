@@ -3,26 +3,6 @@ import type { Session } from "../types/session.js";
 
 const sessions = new Map<string, Session>();
 
-// ─── Auth ─────────────────────────────────────────────────────────────────────
-
-export interface AuthResult {
-  userId: string;
-  displayName: string;
-}
-
-/**
- * Dummy validator — swap for real JWT verification once auth is ready.
- * Should decode the token and return userId + displayName from claims.
- */
-export function validateToken(token: string): AuthResult | null {
-  if (!token) return null;
-  // TODO: verify JWT signature against Next.js auth secret
-  return {
-    userId: `user_${token.slice(0, 8)}`,
-    displayName: "Player",
-  };
-}
-
 // ─── CRUD ─────────────────────────────────────────────────────────────────────
 
 export function upsertSession(

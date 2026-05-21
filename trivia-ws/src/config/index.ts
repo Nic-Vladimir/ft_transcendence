@@ -7,6 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const config = {
   port: Number(process.env.PORT ?? 3000),
   packsDir: process.env.PACKS_DIR ?? path.resolve(__dirname, "../../trivia_packs"),
+  databaseUrl: process.env.DATABASE_URL,
 
   questions: {
     easy:   Number(process.env.QUESTIONS_EASY   ?? 5),

@@ -2,11 +2,28 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "@/styles/admin.css";
 
 export default function Dashboard() {
+  const router = useRouter();
   const [activeView, setActiveView] = useState("new_game");
+  const [roomCode, setRoomCode] = useState("");
+
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+  }
+
+  function joinGame(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const code = roomCode.trim().toUpperCase();
+    if (!code) return;
+
+    router.push(`/game?mode=join&code=${encodeURIComponent(code)}`);
+  }
 
   return (
     <div className="dashboard-shell min-vh-100 w-100 text-white overflow-hidden">
@@ -55,9 +72,13 @@ export default function Dashboard() {
 
               <div className="mt-auto pt-4">
                 <div className="d-flex flex-column gap-2">
-                  <Link href="/login" className="btn dashboard-link-btn text-danger">
+                  <button
+                    type="button"
+                    onClick={logout}
+                    className="btn dashboard-link-btn text-danger"
+                  >
                     Logout
-                  </Link>
+                  </button>
 
                   <Link href="/legal" className="btn dashboard-link-btn text-white">
                     Privacy Policy/Terms of Use
@@ -79,7 +100,7 @@ export default function Dashboard() {
                   <h1 className="dashboard-title">New Game</h1>
                   <p className="text-white/80">This is the new game content.</p>
 
-                  <Link href="/game" className="btn dashboard-action-btn mt-2">
+                  <Link href="/game?mode=create" className="btn dashboard-action-btn mt-2">
                     Create Game
                   </Link>
                 </div>
@@ -88,11 +109,21 @@ export default function Dashboard() {
               {activeView === "join_game" && (
                 <div className="dashboard-content text-body-secondary">
                   <h1 className="dashboard-title">Join Game</h1>
-                  <p className="text-white/80">This is the join game content.</p>
+                  <p className="text-white/80">Enter the room code from the host.</p>
 
-                  <Link href="/game" className="btn dashboard-action-btn mt-2">
-                    Join Game
-                  </Link>
+                  <form onSubmit={joinGame} className="d-flex flex-column gap-3 mt-3">
+                    <input
+                      type="text"
+                      value={roomCode}
+                      onChange={(event) => setRoomCode(event.target.value.toUpperCase())}
+                      className="form-control"
+                      maxLength={4}
+                      placeholder="Room code"
+                    />
+                    <button type="submit" className="btn dashboard-action-btn">
+                      Join Game
+                    </button>
+                  </form>
                 </div>
               )}
             </section>

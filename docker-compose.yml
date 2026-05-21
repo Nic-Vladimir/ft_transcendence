@@ -34,6 +34,7 @@ services:
       QUESTIONS_HARD: ${QUESTIONS_HARD:-5}
       QUESTION_TIMER_MS: ${QUESTION_TIMER_MS:-30000}
       CORS_ORIGIN: ${APP_URL}
+      DATABASE_URL: ${DATABASE_URL}
     volumes:
       - ./trivia-ws/trivia_packs:/app/trivia_packs
     networks:

@@ -16,11 +16,6 @@ export interface ServerMessage<T = unknown> {
 
 // Client -> Server
 
-export interface IdentifyPayload {
-  token: string;
-  displayName: string;
-}
-
 export interface RoomCreatePayload {
   packId: string;
   isPublic: boolean;
