@@ -1,18 +1,18 @@
-"use client";
+// "use client";
 
-import { createContext, useContext } from "react";
-import { useWebSocket } from "@/hooks/useWebSocket";
+// import { createContext, useContext } from "react";
+// import { useWebSocket } from "@/hooks/useWebSocket";
 
-const WSContext = createContext<WebSocket | null>(null);
+// const WSContext = createContext<WebSocket | null>(null);
 
-export function WSProvider({ children }: { children: React.ReactNode }) {
-  const ws = useWebSocket("wss://localhost:8443/ws");
+// export function WSProvider({ children }: { children: React.ReactNode }) {
+//   const ws = useWebSocket("wss://localhost:8443/ws");
 
-  return (
-    <WSContext.Provider value={ws}>
-      {children}
-    </WSContext.Provider>
-  );
-}
+//   return (
+//     <WSContext.Provider value={ws}>
+//       {children}
+//     </WSContext.Provider>
+//   );
+// }
 
-export const useWS = () => useContext(WSContext);
+// export const useWS = () => useContext(WSContext);

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { WSProvider } from "@/context/WSContext";
+// import { WSProvider } from "@/context/WSContext";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -28,9 +28,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <WSProvider>
+        {/* <WSProvider> */}
           {children}
-        </WSProvider>
+        {/* </WSProvider> */}
       </body>
     </html>
   );

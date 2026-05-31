@@ -1,18 +1,18 @@
-import { useEffect, useState } from "react";
+// import { useEffect, useState } from "react";
 
-export function useWebSocket(url: string) {
-  const [ws, setWs] = useState<WebSocket | null>(null);
+// export function useWebSocket(url: string) {
+//   const [ws, setWs] = useState<WebSocket | null>(null);
 
-  useEffect(() => {
-    const socket = new WebSocket(url);
+//   useEffect(() => {
+//     const socket = new WebSocket(url);
 
-    socket.onopen = () => console.log("Connected");
-    socket.onclose = () => console.log("Disconnected");
+//     socket.onopen = () => console.log("Connected");
+//     socket.onclose = () => console.log("Disconnected");
 
-    setWs(socket);
+//     setWs(socket);
 
-    return () => socket.close();
-  }, [url]);
+//     return () => socket.close();
+//   }, [url]);
 
-  return ws;
-}
+//   return ws;
+// }
