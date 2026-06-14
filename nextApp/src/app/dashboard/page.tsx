@@ -1,19 +1,66 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "@/styles/admin.css";
 
+type Pack = {
+  id: string;
+  name: string;
+  questionCount: {
+    easy: number;
+    medium: number;
+    hard: number;
+    total: number;
+  };
+};
+
+type RoomPlayer = {
+  userId: string;
+  displayName: string;
+  score: number;
+  isSpectator: boolean;
+  isReady: boolean;
+};
+
+type Room = {
+  code: string;
+  isPublic: boolean;
+  packId: string;
+  maxPlayers: number;
+  state: string;
+  players: RoomPlayer[];
+};
+
 export default function Dashboard() {
   const router = useRouter();
   const [activeView, setActiveView] = useState("new_game");
   const [roomCode, setRoomCode] = useState("");
+  const [packs, setPacks] = useState<Pack[]>([]);
+  const [selectedPack, setSelectedPack] = useState<string | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const [rooms, setRooms] = useState<Room[]>([]);
+
+  useEffect(() => {
+    fetch("/ws/packs")
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((data) => setPacks(data.packs ?? []))
+      .catch(console.error);
+  }, []);
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
+  }
+
+  function createGame() {
+    if (!selectedPack) return;
+    router.push(`/game?mode=create&packId=${encodeURIComponent(selectedPack)}`);
   }
 
   function joinGame(event: React.FormEvent<HTMLFormElement>) {
@@ -24,6 +71,83 @@ export default function Dashboard() {
 
     router.push(`/game?mode=join&code=${encodeURIComponent(code)}`);
   }
+
+  function getDashboardWsUrl() {
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return `${protocol}//${window.location.host}/ws/`;
+  }
+
+  useEffect(() => {
+    let closedByCleanup = false;
+    const ws = new WebSocket(getDashboardWsUrl());
+    wsRef.current = ws;
+
+    ws.onerror = (event) => {
+      console.error("Dashboard WebSocket error", event);
+    };
+
+    ws.onclose = (event) => {
+      console.log("Dashboard WebSocket closed", event.code, event.reason);
+      if (!closedByCleanup) {
+        console.warn(event.reason || `Connection closed (${event.code})`);
+      }
+    };
+
+    return () => {
+      closedByCleanup = true;
+      wsRef.current = null;
+      ws.close();
+    };
+  }, []);
+
+  const refreshRooms = useCallback(() => {
+    const ws = wsRef.current;
+    if (!ws) return;
+
+    const requestId = crypto.randomUUID();
+
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        const msg = JSON.parse(event.data);
+
+        if (msg.type === "room:list" && msg.requestId === requestId) {
+          setRooms(msg.payload.rooms ?? []);
+          ws.removeEventListener("message", handleMessage);
+        }
+      } catch (err) {
+        console.error("WS parse error:", err);
+      }
+    };
+
+    const sendRoomList = () => {
+      ws.send(
+        JSON.stringify({
+          type: "room:list",
+          requestId,
+          ts: Date.now(),
+          payload: {},
+        })
+      );
+    };
+
+    ws.addEventListener("message", handleMessage);
+
+    if (ws.readyState === WebSocket.OPEN) {
+      sendRoomList();
+    } else {
+      ws.addEventListener("open", sendRoomList, { once: true });
+    }
+
+    return () => {
+      ws.removeEventListener("message", handleMessage);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (activeView !== "join_game") return;
+    const cleanup = refreshRooms();
+    return cleanup;
+  }, [activeView, refreshRooms]);
 
   return (
     <div className="dashboard-shell min-vh-100 w-100 text-white overflow-hidden">
@@ -98,11 +222,37 @@ export default function Dashboard() {
               {activeView === "new_game" && (
                 <div className="dashboard-content text-body-secondary">
                   <h1 className="dashboard-title">New Game</h1>
-                  <p className="text-white/80">This is the new game content.</p>
+                  <p className="text-white/80">Pick a game to start.</p>
+                  <div className="row g-3">
+                    {packs.map((pack) => (
+                      <div key={pack.id} className="col-12 col-md-6 col-lg-4">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPack(pack.id)}
+                          className={`w-100 text-start dashboard-pack p-3 h-100 ${
+                            selectedPack === pack.id ? "dashboard-pack-selected" : ""
+                          }`}
+                        >
+                          <h5 className="text-white">{pack.name}</h5>
+                          <p className="text-white/70 mb-2">
+                            Questions: {pack.questionCount.total}
+                          </p>
+                          <small className="text-white/50">
+                            Easy: {pack.questionCount.easy} | Medium: {pack.questionCount.medium} | Hard: {pack.questionCount.hard}
+                          </small>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
 
-                  <Link href="/game?mode=create" className="btn dashboard-action-btn mt-2">
+                  <button
+                    type="button"
+                    onClick={createGame}
+                    disabled={!selectedPack}
+                    className={`btn dashboard-action-btn mt-3 ${!selectedPack ? "disabled" : ""}`}
+                  >
                     Create Game
-                  </Link>
+                  </button>
                 </div>
               )}
 
@@ -124,6 +274,32 @@ export default function Dashboard() {
                       Join Game
                     </button>
                   </form>
+                  <p className="text-white/80 mt-3">Or you can choose from public games.</p>
+                  <div className="dashboard-hide-scrollbar" style={{ maxHeight: "300px" }}>
+                    <div className="row g-3">
+                      {rooms.map((room) => (
+                        <div key={room.code} className="col-12 col-md-6 col-lg-4">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              router.push(`/game?mode=join&code=${encodeURIComponent(room.code)}`)
+                            }
+                            className="w-100 text-start dashboard-pack p-3 h-100"
+                          >
+                            <h5 className="text-white">Room {room.code}</h5>
+                            <p className="text-white/70 mb-2">
+                              Pack: {room.packId}
+                              <br />
+                              Players: {room.players.length}/{room.maxPlayers}
+                              <br />
+                              State: {room.state}
+                            </p>
+                            <small className="text-white/50">Public</small>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </section>

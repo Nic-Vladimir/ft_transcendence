@@ -135,6 +135,12 @@ export default function TriviaPage() {
       const params = new URLSearchParams(window.location.search);
       const mode = params.get("mode");
       const code = params.get("code")?.trim().toUpperCase();
+      const packId = params.get("packId");
+
+      if (mode === "create" && !packId) {
+        setConnectionStatus("No pack selected.");
+        return;
+      }
 
       if (mode === "join" && code) {
         setConnectionStatus(`Joining room ${code}...`);
@@ -151,7 +157,7 @@ export default function TriviaPage() {
         type: "room:create",
         ts: Date.now(),
         payload: {
-          packId: "history",
+          packId,
           isPublic: true,
           maxPlayers: 4,
         },
