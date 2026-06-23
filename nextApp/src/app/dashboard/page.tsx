@@ -182,6 +182,7 @@ export default function Dashboard() {
   const handleDeleteProfile = async () => {
     if (!confirm("Are you sure you want to delete your profile?")) return;
     await deleteProfile();
+    await logout();
     window.location.href = "/";
   };
 
