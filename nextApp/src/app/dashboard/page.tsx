@@ -529,11 +529,11 @@ export default function Dashboard() {
                       type="text"
                       value={roomCode}
                       onChange={(event) => setRoomCode(event.target.value.toUpperCase())}
-                      className="form-control"
+                      className="form-control w-100"
                       maxLength={4}
                       placeholder="Room code"
                     />
-                    <button type="submit" className="btn dashboard-action-btn">
+                    <button type="submit" className="btn dashboard-action-btn w-100">
                       Join Game
                     </button>
                   </form>
