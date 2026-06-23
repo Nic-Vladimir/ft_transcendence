@@ -348,7 +348,16 @@ export default function Dashboard() {
                   {!loading && !error && user && (
                     <div className="d-flex justify-content-start align-items-start">
                       {/* <div className="card p-4 shadow" style={{ width: "100%", maxWidth: "520px" }}> */}
-                      <div style={{ width: "100%", maxWidth: "520px" }}>
+                      <div
+                        className="dashboard-hide-scrollbar"
+                        style={{
+                          width: "100%",
+                          maxWidth: "520px",
+                          maxHeight: "80vh",
+                          overflowY: "auto",
+                          paddingRight: "0.5rem",
+                        }}
+                      >
                         <h3 className="dashboard-title mb-4">My Profile</h3>
 
                         <form onSubmit={handleUpdateProfile}>
@@ -387,14 +396,14 @@ export default function Dashboard() {
                           {twoFactorMessage && <div className="alert alert-success py-2">{twoFactorMessage}</div>}
 
                           {!twoFactorEnabled && !twoFactorSecret && (
-                            <button
-                              className="btn dashboard-link-btn w-100 mb-2"
-                              onClick={handleTwoFactorSetup}
-                              disabled={twoFactorLoading}
-                              type="button"
-                            >
-                              {twoFactorLoading ? "Preparing…" : "Set up 2FA"}
-                            </button>
+                              <button
+                                className="btn dashboard-link-btn w-100 text-center mb-2"
+                                onClick={handleTwoFactorSetup}
+                                disabled={twoFactorLoading}
+                                type="button"
+                              >
+                                {twoFactorLoading ? "Preparing…" : "Set up 2FA"}
+                              </button>
                           )}
 
                           {twoFactorSecret && (
@@ -473,28 +482,32 @@ export default function Dashboard() {
                 <div className="dashboard-content text-white">
                   <h1 className="dashboard-title">New Game</h1>
                   <p className="text-white/80">Pick a game to start.</p>
-                  <div className="row g-3">
-                    {packs.map((pack) => (
-                      <div key={pack.id} className="col-12 col-md-6 col-lg-4">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedPack(pack.id)}
-                          className={`w-100 text-start dashboard-pack p-3 h-100 ${
-                            selectedPack === pack.id ? "dashboard-pack-selected" : ""
-                          }`}
-                        >
-                          <h5 className="text-white">{pack.name}</h5>
-                          <p className="text-white/70 mb-2">
-                            Questions: {pack.questionCount.total}
-                          </p>
-                          <small className="text-white/50">
-                            Easy: {pack.questionCount.easy} | Medium: {pack.questionCount.medium} | Hard: {pack.questionCount.hard}
-                          </small>
-                        </button>
-                      </div>
-                    ))}
+                  <div
+                    className="dashboard-hide-scrollbar"
+                    style={{ maxHeight: "40vh", overflowY: "auto" }}
+                  >
+                    <div className="row g-3">
+                      {packs.map((pack) => (
+                        <div key={pack.id} className="col-12 col-md-6 col-lg-4">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedPack(pack.id)}
+                            className={`w-100 text-start dashboard-pack p-3 h-100 ${
+                              selectedPack === pack.id ? "dashboard-pack-selected" : ""
+                            }`}
+                          >
+                            <h5 className="text-white">{pack.name}</h5>
+                            <p className="text-white/70 mb-2">
+                              Questions: {pack.questionCount.total}
+                            </p>
+                            <small className="text-white/50">
+                              Easy: {pack.questionCount.easy} | Medium: {pack.questionCount.medium} | Hard: {pack.questionCount.hard}
+                            </small>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-
                   <button
                     type="button"
                     onClick={createGame}
