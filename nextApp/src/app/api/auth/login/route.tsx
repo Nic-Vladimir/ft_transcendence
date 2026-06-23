@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
 
     const res = NextResponse.json({
       id: user.id,
-      redirect_to: user.role === "admin" ? "/admin/users" : "/profile",
+      redirect_to: user.role === "admin" ? "/admin/users" : "/dashboard?view=profile",
     });
     appendSessionCookie(res, token);
     clearCookie(res, PENDING_2FA_COOKIE);
