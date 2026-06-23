@@ -342,13 +342,14 @@ export default function Dashboard() {
               )} */}
 
               {activeView === "profile" && (
-                <div className="dashboard-content text-body-secondary">
+                <div className="dashboard-content text-white">
                   {loading && <div className="text-center mt-5">Loading...</div>}
                   {error && <div className="alert alert-danger mt-5 text-center">{error}</div>}
                   {!loading && !error && user && (
-                    <div className="d-flex justify-content-center align-items-start">
-                      <div className="card p-4 shadow" style={{ width: "100%", maxWidth: "520px" }}>
-                        <h3 className="mb-3 text-center">My Profile</h3>
+                    <div className="d-flex justify-content-start align-items-start">
+                      {/* <div className="card p-4 shadow" style={{ width: "100%", maxWidth: "520px" }}> */}
+                      <div style={{ width: "100%", maxWidth: "520px" }}>
+                        <h3 className="dashboard-title mb-4">My Profile</h3>
 
                         <form onSubmit={handleUpdateProfile}>
                           <div className="mb-3">
@@ -373,7 +374,7 @@ export default function Dashboard() {
                             />
                           </div>
 
-                          <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+                          <button type="submit" className="btn dashboard-action-btn w-100" disabled={loading}>
                             {loading ? <span className="spinner-border spinner-border-sm" /> : "Update Profile"}
                           </button>
                         </form>
@@ -387,7 +388,7 @@ export default function Dashboard() {
 
                           {!twoFactorEnabled && !twoFactorSecret && (
                             <button
-                              className="btn btn-outline-secondary w-100 mb-2"
+                              className="btn dashboard-link-btn w-100 mb-2"
                               onClick={handleTwoFactorSetup}
                               disabled={twoFactorLoading}
                               type="button"
@@ -400,13 +401,13 @@ export default function Dashboard() {
                             <div className="mb-3">
                               {twoFactorUrl && (
                                 <div className="text-center mb-3">
-                                  <div className="small text-muted mb-2">Scan with your authenticator app</div>
+                                  <div className="small text-white-50 mb-2">Scan with your authenticator app</div>
                                   <div className="d-inline-block bg-white p-3 rounded">
                                     <QRCodeSVG value={twoFactorUrl} size={180} />
                                   </div>
                                 </div>
                               )}
-                              <div className="small text-muted mb-2">Manual setup key</div>
+                              <div className="small text-white-50 mb-2">Manual setup key</div>
                               <div className="form-control mb-2" style={{ fontFamily: "monospace", wordBreak: "break-all" }}>
                                 {twoFactorSecret}
                               </div>
@@ -431,7 +432,7 @@ export default function Dashboard() {
 
                           {twoFactorSecret && !twoFactorEnabled && (
                             <button
-                              className="btn btn-primary w-100 mb-2"
+                              className="btn dashboard-action-btn w-100 mb-2"
                               onClick={handleTwoFactorEnable}
                               disabled={twoFactorLoading || !twoFactorCode.trim()}
                               type="button"
@@ -442,7 +443,7 @@ export default function Dashboard() {
 
                           {twoFactorEnabled && (
                             <button
-                              className="btn btn-outline-danger w-100 mb-2"
+                              className="btn dashboard-link-btn text-danger w-100 mb-2"
                               onClick={handleTwoFactorDisable}
                               disabled={twoFactorLoading || !twoFactorCode.trim()}
                               type="button"
@@ -455,7 +456,7 @@ export default function Dashboard() {
                         <hr />
 
                         <button
-                          className="btn btn-danger w-100"
+                          className="btn dashboard-action-btn text-danger w-100"
                           onClick={handleDeleteProfile}
                           disabled={loading}
                           type="button"
@@ -469,7 +470,7 @@ export default function Dashboard() {
               )}
 
               {activeView === "new_game" && (
-                <div className="dashboard-content text-body-secondary">
+                <div className="dashboard-content text-white">
                   <h1 className="dashboard-title">New Game</h1>
                   <p className="text-white/80">Pick a game to start.</p>
                   <div className="row g-3">
@@ -506,7 +507,7 @@ export default function Dashboard() {
               )}
 
               {activeView === "join_game" && (
-                <div className="dashboard-content text-body-secondary">
+                <div className="dashboard-content text-white">
                   <h1 className="dashboard-title">Join Game</h1>
                   <p className="text-white/80">Enter the room code from the host.</p>
 
