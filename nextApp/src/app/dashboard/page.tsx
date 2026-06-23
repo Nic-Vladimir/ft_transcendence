@@ -524,19 +524,21 @@ export default function Dashboard() {
                   <h1 className="dashboard-title">Join Game</h1>
                   <p className="text-white/80">Enter the room code from the host.</p>
 
-                  <form onSubmit={joinGame} className="d-flex flex-column gap-3 mt-3">
-                    <input
-                      type="text"
-                      value={roomCode}
-                      onChange={(event) => setRoomCode(event.target.value.toUpperCase())}
-                      className="form-control w-100"
-                      maxLength={4}
-                      placeholder="Room code"
-                    />
-                    <button type="submit" className="btn dashboard-action-btn w-100">
-                      Join Game
-                    </button>
-                  </form>
+                  <div style={{ maxWidth: "420px" }}>
+                    <form onSubmit={joinGame} className="d-flex flex-column gap-3 mt-3">
+                      <input
+                        type="text"
+                        value={roomCode}
+                        onChange={(event) => setRoomCode(event.target.value.toUpperCase())}
+                        className="form-control w-100"
+                        maxLength={4}
+                        placeholder="Room code"
+                      />
+                      <button type="submit" className="btn dashboard-action-btn w-100">
+                        Join Game
+                      </button>
+                    </form>
+                  </div>
                   <p className="text-white/80 mt-3">Or you can choose from public games.</p>
                   <div className="dashboard-hide-scrollbar" style={{ maxHeight: "300px" }}>
                     <div className="row g-3">
