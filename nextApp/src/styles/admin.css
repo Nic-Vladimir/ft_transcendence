@@ -221,6 +221,19 @@ body {
   color: #fff;
 }
 
+.dashboard-content,
+.dashboard-content h3,
+.dashboard-content h5,
+.dashboard-content p,
+.dashboard-content label,
+.dashboard-content .form-label {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.dashboard-content .text-muted {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+
 .game-shell {
   background: #070b14;
 }
